@@ -3,11 +3,11 @@
 # ----------------------- #
 
 url: http://dougireton.github.com
-title: Doug Ireton's blog
-subtitle: Automate All the Things!
+title: Automate All the Things!
+subtitle: Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation
 author: Doug Ireton
 simple_search: http://google.com/search
-description: A hacker's blog about Chef, Git, Ruby, and Infrastructure Automation
+description: Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation
 
 # Default date format is "ordinal" (resulting in "July 22nd 2007")
 # You can customize the format as defined in
