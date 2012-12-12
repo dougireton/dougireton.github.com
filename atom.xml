@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2012-12-12T11:09:12-08:00</updated>
+  <updated>2012-12-12T11:25:48-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -33,10 +33,6 @@
 <li>Runs <a href="http://acrmp.github.com/foodcritic/">&#8216;foodcritic&#8217;</a>, the de facto Chef cookbook linting tool.</li>
 </ol>
 
-
-<h2>But, how do I use it?</h2>
-
-<p>Just copy the script below to file named &#8216;pre-commit&#8217;, make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.</p>
 
 <div><script src='https://gist.github.com/4256097.js?file='></script>
 <noscript><pre><code>#!/usr/bin/env ruby
@@ -81,6 +77,10 @@ unless $?.success?
 end
 </code></pre></noscript></div>
 
+
+<h2>But, how do I use it?</h2>
+
+<p>Just copy the script below to file named &#8216;pre-commit&#8217;, make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.</p>
 
 <h2>Wait a minute! It&#8217;s not robust!</h2>
 
