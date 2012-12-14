@@ -19,15 +19,15 @@ The pre-commit script below does four things:
 3. Runs ['tailor'] [3] to check your code against Ruby style conventions.
 4. Runs ['foodcritic'] [4], the de facto Chef cookbook linting tool.
 
-## But, how do I use it?
-Just copy the script below to file named 'pre-commit', make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.
-
 [1]: http://git-scm.com/docs/githooks
 [2]: http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test 
 [3]: https://github.com/turboladen/tailor
 [4]: http://acrmp.github.com/foodcritic/
 
-{% gist 4256097 %}
+{% gist 4256097 pre-commit %}
+
+## But, how do I use it?
+Just copy the script below to file named 'pre-commit', make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.
 
 ## Wait a minute! It's not robust!
 You may have noticed that the script needs a few things. It should check for the existence of various binaries (knife, foodcritic, tailor) before calling them. I'm sure you could think of many more improvents. I welcome your comments or gist forks. I just had to move on to more pressing things.
