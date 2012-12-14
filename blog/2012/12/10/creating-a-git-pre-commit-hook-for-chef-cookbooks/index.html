@@ -106,7 +106,7 @@
 </ol>
 
 
-<div><script src='https://gist.github.com/4256097.js?file=pre-commit'></script>
+<div><script src='https://gist.github.com/4256097.js?file='></script>
 <noscript><pre><code>#!/usr/bin/env ruby
 
 # check for whitespace errors
@@ -121,32 +121,33 @@ PARENT_PATH = COOKBOOK_PATH[0]
 COOKBOOK_NAME = COOKBOOK_PATH[1].chomp # remove trailing newline
 
 puts 'Running knife cookbook test...'
-knife_output = `knife cookbook test #{ COOKBOOK_NAME } -o #{ PARENT_PATH } -c ~/chef/wit/chef-repo/.chef/knife.rb`
+knife_output = `knife cookbook test #{ COOKBOOK_NAME } -o #{ PARENT_PATH }`
 unless $?.success?
   puts knife_output
   exit 1
 end
 
 puts 'Running tailor...'
-
-# Get the file names of (A)dded, (C)opied, (M)odified Ruby files 
-STAGED_FILES = `git diff-index --name-only --diff-filter=ACM HEAD -- '*.rb'`
+STAGED_FILES = `git diff-index --name-only HEAD`
 STAGED_FILES.lines do |file|
-  file.chomp! # remove carriage returns
+  file.chomp!
   puts file
-    tailor_output = `tailor --max-line-length 999 #{ file }`
+  if file.end_with? '.rb'
+    tailor_output = `tailor #{ file }`
     unless $?.success?
       puts tailor_output
       exit 1
     end
+  end
 end
 
-puts &quot;Running foodcritic...&quot; 
-fc_output = `foodcritic --epic-fail any #{ File.join(PARENT_PATH, COOKBOOK_NAME) }`
+puts 'Running foodcritic...'
+fc_output = `foodcritic --epic-fail any #{ COOKBOOK_PATH }`
 unless $?.success?
   puts fc_output
   exit 1
-end</code></pre></noscript></div>
+end
+</code></pre></noscript></div>
 
 
 <h2>But, how do I use it?</h2>
