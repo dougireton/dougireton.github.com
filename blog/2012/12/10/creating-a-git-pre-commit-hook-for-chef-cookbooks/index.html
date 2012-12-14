@@ -106,48 +106,7 @@
 </ol>
 
 
-<div><script src='https://gist.github.com/4256097.js?file='></script>
-<noscript><pre><code>#!/usr/bin/env ruby
-
-# check for whitespace errors
-git_ws_check = `git diff-index --check --cached HEAD --`
-unless $?.success?
-  puts git_ws_check
-  exit 1
-end
-
-COOKBOOK_PATH = File.split `git rev-parse --show-toplevel`
-PARENT_PATH = COOKBOOK_PATH[0]
-COOKBOOK_NAME = COOKBOOK_PATH[1].chomp # remove trailing newline
-
-puts 'Running knife cookbook test...'
-knife_output = `knife cookbook test #{ COOKBOOK_NAME } -o #{ PARENT_PATH }`
-unless $?.success?
-  puts knife_output
-  exit 1
-end
-
-puts 'Running tailor...'
-STAGED_FILES = `git diff-index --name-only HEAD`
-STAGED_FILES.lines do |file|
-  file.chomp!
-  puts file
-  if file.end_with? '.rb'
-    tailor_output = `tailor #{ file }`
-    unless $?.success?
-      puts tailor_output
-      exit 1
-    end
-  end
-end
-
-puts 'Running foodcritic...'
-fc_output = `foodcritic --epic-fail any #{ COOKBOOK_PATH }`
-unless $?.success?
-  puts fc_output
-  exit 1
-end
-</code></pre></noscript></div>
+<script src="https://gist.github.com/4256097.js"></script>
 
 
 <h2>But, how do I use it?</h2>
