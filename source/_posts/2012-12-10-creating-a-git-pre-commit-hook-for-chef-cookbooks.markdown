@@ -24,7 +24,7 @@ The pre-commit script below does four things:
 [3]: https://github.com/turboladen/tailor
 [4]: http://acrmp.github.com/foodcritic/
 
-{% gist 4256097 pre-commit %}
+<script src="https://gist.github.com/4256097.js"></script>
 
 ## But, how do I use it?
 Just copy the script below to file named 'pre-commit', make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.
