@@ -24,6 +24,8 @@ The pre-commit script below does four things:
 [3]: https://github.com/turboladen/tailor
 [4]: http://acrmp.github.com/foodcritic/
 
+<!--more-->
+
 {% include_code lang:ruby chef/pre-commit %}
 
 ## But, how do I use it?
