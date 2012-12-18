@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2012-12-16T19:55:44-08:00</updated>
+  <updated>2012-12-18T09:22:36-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,116 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[How to include the Windows Cookbook Helper methods in your Chef recipe]]></title>
+    <link href="http://dougireton.github.com/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/"/>
+    <updated>2012-12-16T20:06:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>We&#8217;ve been writing a lot of Windows Cookbooks and Recipes lately and it&#8217;s been very helpful to be able to use the helper methods in the Opscode Windows cookbook. In this post I&#8217;ll show you how to include and use those helper methods. You can generalize this to library methods from any cookbook, even your own cookbooks.</p>
+
+<h2>What are the helper methods?</h2>
+
+<p>The Windows cookbook includes several nice <a href="https://github.com/opscode-cookbooks/windows/tree/master/libraries">helper methods</a> for dealing with windows paths and the registry. Unfortunately, it&#8217;s not obvious how to use these helper methods in a recipe. At first I tried the standard Ruby <code>require</code> statement in a recipe, but this doesn&#8217;t work. My Talented and Gifted &trade; teammate Kevin was able to explain why to me, but now I can&#8217;t remember the reason.</p>
+
+<h2>How do I use them in a recipe?</h2>
+
+<p>Just use <code>::Chef::Recipe.send(:include, Windows::Helper)</code> like this:</p>
+
+<figure class='code'><figcaption><span>::Chef::Recipe.send(:include, Windows::Helper)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># include Windows::Helper from Opscode Windows Cookbook</span>
+</span><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">Windows</span><span class="o">::</span><span class="no">Helper</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># now you can call helper methods like win_friendly_path directly</span>
+</span><span class='line'><span class="n">my_batch_file</span> <span class="o">=</span> <span class="n">win_friendly_path</span><span class="p">(</span>
+</span><span class='line'>                     <span class="o">::</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;cookbook&#39;</span><span class="o">][</span><span class="s1">&#39;batch_dir&#39;</span><span class="o">]</span><span class="p">,</span><span class="s1">&#39;foo.bat&#39;</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">execute</span> <span class="s2">&quot;My batch file&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">command</span> <span class="n">my_batch_file</span>
+</span><span class='line'>  <span class="n">creates</span> <span class="s2">&quot;e:/logs/my_batch_file.log&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<!--more-->
+
+
+<h2>What Else Can I Do?</h2>
+
+<p>You might also want to use <a href="https://github.com/opscode/chef/blob/master/lib/chef/mixin/shell_out.rb">Chef::Mixin::Shellout</a> helper methods, e.g. <code>shell_out!</code>.</p>
+
+<figure class='code'><figcaption><span>Chef::Mixin::Shellout</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># include Chef::Mixin::Shellout</span>
+</span><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Mixin</span><span class="o">::</span><span class="no">ShellOut</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># later in your code ...</span>
+</span><span class='line'><span class="n">output</span> <span class="o">=</span> <span class="n">shell_out!</span> <span class="n">my_cmd</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Output: </span><span class="si">#{</span> <span class="n">output</span><span class="o">.</span><span class="n">stdout</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Errors: </span><span class="si">#{</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span> <span class="si">}</span><span class="s2">&quot;</span> <span class="k">unless</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">empty?</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Creating your own helper methods</h2>
+
+<p>You can also use this pattern in your own cookbooks. If you have common methods you find yourself using over and over, you should put them into a file in the <code>libraries</code> directory in your cookbook.</p>
+
+<p>Create a helper.rb inside the cookbook/libraries folder:</p>
+
+<figure class='code'><figcaption><span>Creating your own helpers</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">CookbookName</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Helper</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">my_helper_method</span><span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">)</span>
+</span><span class='line'>      <span class="c1"># your code here</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then use your helper like this:</p>
+
+<figure class='code'><figcaption><span>How to use your helper</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">CookbookName</span><span class="o">::</span><span class="no">Helper</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">output</span> <span class="o">=</span> <span class="n">my_helper_method</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So, now you can use helper methods in your own cookbooks for fun and profit. Let me know in the comments if you are using this pattern other patterns for including cookbook helpers.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Creating a git pre-commit hook for Chef cookbooks]]></title>
@@ -32,6 +142,11 @@
 <li>Runs <a href="https://github.com/turboladen/tailor">&#8216;tailor&#8217;</a> to check your code against Ruby style conventions.</li>
 <li>Runs <a href="http://acrmp.github.com/foodcritic/">&#8216;foodcritic&#8217;</a>, the de facto Chef cookbook linting tool.</li>
 </ol>
+
+
+<!--more-->
+
+
 
 
 <figure class='code'><figcaption><span> (pre-commit)</span> <a href='http://dougireton.github.com/downloads/code/chef/pre-commit'>download</a></figcaption>
