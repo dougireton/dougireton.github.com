@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Automatically upgrading Chef client on Vagrant Up - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! If you do enough Vagrant testing, you&#8217;ll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Automatically Upgrading Chef Client on Vagrant Up</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-23T19:51:00-08:00" pubdate data-updated="true">Dec 23<span>rd</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>If you do enough Vagrant testing, you&#8217;ll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen boxes come with Chef 10.14.4, not the latest 10.16.2 version. In this post I&#8217;ll show you how to automatically upgrade the Chef client on <code>vagrant up</code>. The trick is to use two <code>config.vm.provision</code> blocks in your Vagrantfile.</p>
+
+<!--more-->
+
+
+<h2>Download the Opscode Chef-Client cookbook and add an Upgrade recipe</h2>
+
+<p>You&#8217;ll need a Chef recipe to upgrade your Chef client. Below is a recipe we added to our fork of the <a href="http://community.opscode.com/cookbooks/chef-client">Opscode Chef-Client</a> cookbook.</p>
+
+<figure class='code'><figcaption><span>Chef Client Upgrade Recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># put this in `chef-client/recipes/upgrade.rb`</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">windows_package</span> <span class="s2">&quot;Opscode Chef Client Installer for Windows v10.16.2&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;https://www.opscode.com/chef/install.msi&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We&#8217;re using Windows in this case but obviously, use the Chef client for your platform. We&#8217;ve successfully used this pattern with Linux boxes as well.</p>
+
+<h2>In your Vagrantfile</h2>
+
+<figure class='code'><figcaption><span>Vagrantfile</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="ss">:chef_solo</span> <span class="k">do</span> <span class="o">|</span><span class="n">chef</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># this provision block upgrades the Chef Client before the real </span>
+</span><span class='line'>  <span class="c1"># Chef run starts</span>
+</span><span class='line'>  <span class="n">chef</span><span class="o">.</span><span class="n">run_list</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[chef-client::upgrade]&quot;</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># This is the real Chef run</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="ss">:chef_solo</span> <span class="k">do</span> <span class="o">|</span><span class="n">chef</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">chef</span><span class="o">.</span><span class="n">run_list</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[my_recipe]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[my_other_recipe::beer]&quot;</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>OK, but two Chef runs? Really?</h2>
+
+<blockquote><p>&#8220;But, why can&#8217;t you just use a single provision block and add the Chef Client upgrade recipe to the first position in the run list?&#8221;</p></blockquote>
+
+
+<p>That was my question the first time Kevin showed me this pattern. He explained,</p>
+
+<blockquote><p>&#8220;Because, Chef will complete the Chef run with the same version it started with.&#8221;</p></blockquote>
+
+
+<p>In other words, the first Chef run starts with 10.x and upgrades itself. The second Chef run starts with the new, shiny, upgraded client.</p>
+
+<h2>Credit Where Credit is Due</h2>
+
+<p>Once again, mad props to my Talented and Gifted&trade; teammate <a href="https://twitter.com/moserke">Kevin</a> for figuring this out. This really helped us out when we were stuck with a RHEL 5.8 Vagrant box with Chef 10.8 and needed to test Chef recipes written for Chef 10.16.2.</p>
+
+<h2>Ladies and Gentlemen, <code>'vagrant up'</code></h2>
+
+<p>Now everytime, you <code>vagrant destroy</code> and <code>vagrant up</code>, you&#8217;ll have the latest Chef Client without having to crack open and repackage your Vagrant box. Happy testing and let me know how it works for you.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-23T19:51:00-08:00" pubdate data-updated="true">Dec 23<span>rd</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/" data-via="dougireton" data-counturl="http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/" title="Previous Post: How to include the Windows Cookbook Helper methods in your Chef recipe">&laquo; How to include the Windows Cookbook Helper methods in your Chef recipe</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically upgrading Chef client on Vagrant Up</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/">How to include the Windows Cookbook Helper methods in your Chef recipe</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Creating a git pre-commit hook for Chef cookbooks</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("dougireton", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/dougireton" class="twitter-follow-button" data-show-count="false">Follow @dougireton</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/';
+        var disqus_url = 'http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
