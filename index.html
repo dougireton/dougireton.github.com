@@ -9,7 +9,7 @@
   <meta name="author" content="Doug Ireton">
 
   
-  <meta name="description" content="Ohai Chefs! If you do enough Vagrant testing, you&#8217;ll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen &hellip;">
+  <meta name="description" content="Ohai Chefs! If you&#8217;ve written any Chef recipes at all, you&#8217;ve almost certainly used Lightweight Resources and Providers (LWRPs). LWRPs &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,66 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, Part 1: The Resource</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-31T11:00:00-08:00" pubdate data-updated="true">Dec 31<span>st</span>, 2012</time>
+        
+         | <a href="/blog/2012/12/31/creating-an-lwrp/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>If you&#8217;ve written any Chef recipes at all, you&#8217;ve almost certainly used Lightweight Resources and Providers (LWRPs). LWRPs enable you start/stop services, install packages, manage firewalls, deploy apps and many other common configuration tasks. <a href="http://docs.opscode.com/essentials_cookbook_lwrp.html">LWRPs</a> combine a simple interface (Resource) with one or more usually OS-specific implementations (Providers). For example this resource installs Windows packages:</p>
+
+<figure class='code'><figcaption><span>Windows Package Resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">windows_package</span> <span class="s2">&quot;7-Zip 9.20 (x64 edition)&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;http://downloads.sourceforge.net/sevenzip/7z920-x64.msi&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>windows_package</code> <em>provider</em>, which comes with the Windows cookbook, is 250 lines of code. It handles five different kinds of package types, e.g. msi, inno, nullsoft, etc. LWRPs make it very easy for sysadmins to write Chef recipes with a minimal amount of code because someone has already done the hard work of writing the Resource and Provider.</p>
+
+<p>Even though Opscode has provided many LWRPs &#8220;out of the box&#8221;, you will still need to write your own at some point. This week we&#8217;ll look at how to write an LWRP starting with the Resource part. Next week, we&#8217;ll complete the two-part series by learning how to write the corresponding Provider.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/31/creating-an-lwrp/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -270,6 +330,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, part 1: The Resource</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically upgrading Chef client on Vagrant Up</a>
       </li>
     
@@ -311,7 +375,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2012 - Doug Ireton -
+  Copyright &copy; 2013 - Doug Ireton -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
