@@ -122,7 +122,7 @@ end
 
 ## `load_current_resource` nuts and bolts
 
-So for our bare minimum `load_current_resource` method, we need to set `@current_resource` to an instance of `Chef::Resource::WindowsPrinterPort` and copy one or more attributes from the `@new_resource`, which is passed in from the `windows_printer_port` Resource in the Recipe. In other words, Chef  creates the `@new_resource` class instance from the attributes in the Recipe and makes it available to the Provider automatically.
+So for our bare minimum `load_current_resource` method, we need to set `@current_resource` to an instance of `Chef::Resource::WindowsPrinterPort` and copy one or more attributes from the `@new_resource`, which is passed in from the `windows_printer_port` Resource in the Recipe. Chef  creates the `@new_resource` class instance from the attributes in the Recipe and makes it available to the Provider automatically.
 
 In this case, to determine if the printer port already exists, we need to query the Windows Registry using the `port_name` attribute. The `port_name` is usually `IP_<ipv4_address>`, but could could be anthing if the user specified a custom `port_name` in the Recipe.
 
