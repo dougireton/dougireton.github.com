@@ -4,7 +4,7 @@
   <title><![CDATA[Category: chef, | Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/blog/categories/chef-/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-09T07:35:31-08:00</updated>
+  <updated>2013-01-09T07:38:11-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -143,7 +143,7 @@ end
 
 <h2><code>load_current_resource</code> nuts and bolts</h2>
 
-<p>So for our bare minimum <code>load_current_resource</code> method, we need to set <code>@current_resource</code> to an instance of <code>Chef::Resource::WindowsPrinterPort</code> and copy one or more attributes from the <code>@new_resource</code>, which is passed in from the <code>windows_printer_port</code> Resource in the Recipe. In other words, Chef  creates the <code>@new_resource</code> class instance from the attributes in the Recipe and makes it available to the Provider automatically.</p>
+<p>So for our bare minimum <code>load_current_resource</code> method, we need to set <code>@current_resource</code> to an instance of <code>Chef::Resource::WindowsPrinterPort</code> and copy one or more attributes from the <code>@new_resource</code>, which is passed in from the <code>windows_printer_port</code> Resource in the Recipe. Chef  creates the <code>@new_resource</code> class instance from the attributes in the Recipe and makes it available to the Provider automatically.</p>
 
 <p>In this case, to determine if the printer port already exists, we need to query the Windows Registry using the <code>port_name</code> attribute. The <code>port_name</code> is usually <code>IP_&lt;ipv4_address&gt;</code>, but could could be anthing if the user specified a custom <code>port_name</code> in the Recipe.</p>
 
