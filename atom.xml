@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-02T23:05:58-08:00</updated>
+  <updated>2013-01-08T23:17:33-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,184 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Creating an LWRP, part 2: The Provider]]></title>
+    <link href="http://dougireton.github.com/blog/2013/01/07/creating-an-lwrp-part-2/"/>
+    <updated>2013-01-07T14:35:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/01/07/creating-an-lwrp-part-2</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at part one of creating an LWRP - the Resource. This week, we&#8217;ll look at part two - the Provider. We&#8217;ll look at a real Provider which uses Ruby and PowerShell to create and delete printer ports. Since the Provider code is so long, I&#8217;ll cover the first half this week, and the second half next week. The first half will cover the <code>:create</code> and <code>:delete</code> Action methods, how to support <code>why_run</code> (dry-run or what-if mode) and how to use the <code>load_current_resource</code> method.</p>
+
+<!--more-->
+
+
+<p>As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy to create Recipes which do a lot of work in a few lines of code.</p>
+
+<h2>The Provider</h2>
+
+<p>The Provider part of an LWRP is the OS-specific code which actually installs, creates, deletes, starts, or stops the resource on the managed node. As we&#8217;ll see in the example below, Providers are written in Ruby but often use Bash, PowerShell, or command-line utilities to do their work.</p>
+
+<h2>Or maybe <em>Providers</em>&#8230;</h2>
+
+<p>In an LWRP, a given Resource may have more than one Provider. For example the <a href="https://github.com/opscode-cookbooks/windows#windows_feature"><code>windows_feature</code></a> LWRP in the Windows cookbook has two Providers, one for installing features via <a href="http://msdn.microsoft.com/en-us/library/dd371719(v=vs.85).aspx"><code>dism.exe</code></a>, and one for installing features using the older <a href="http://technet.microsoft.com/en-us/library/ee344834(v=ws.10).aspx"><code>servermanagercmd.exe</code></a>.</p>
+
+<h2>Show me the code!</h2>
+
+<p>Continuing our example from last week we&#8217;ll be looking at the <a href="https://github.com/opscode-cookbooks/windows#windows_printer_port">Windows Printer Port LWRP</a> .</p>
+
+<figure class='code'><figcaption><span>Windows Printer Port Provider</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Support whyrun</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">whyrun_supported?</span>
+</span><span class='line'>  <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">action</span> <span class="ss">:create</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2"> already exists - nothing to do.&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Create </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">create_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">action</span> <span class="ss">:delete</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Delete </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">delete_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@current_resource</span> <span class="si">}</span><span class="s2"> doesn&#39;t exist - can&#39;t delete.&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">load_current_resource</span>
+</span><span class='line'>  <span class="vi">@current_resource</span> <span class="o">=</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Resource</span><span class="o">::</span><span class="no">WindowsPrinterPort</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">port_exists?</span><span class="p">(</span><span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># TODO: Set @current_resource port properties from registry</span>
+</span><span class='line'>    <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># -- SNIP --</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The <code>:create</code> action</h2>
+
+<p>Let&#8217;s look at the <code>:create</code> action first. We first check if the <code>@current_resource</code> already exists, and if so, we log a message and do nothing. <code>@current_resouce</code> is set to the resource on the managed node if it already exists. So if the printer port we are trying to create already exists, we don&#8217;t create it again. This is how we acheive idempotency in our LWRP and it&#8217;s a core tenet of Chef - don&#8217;t change a node&#8217;s state unless it&#8217;s necessary.</p>
+
+<p>So if our printer port hasn&#8217;t yet been created, we call the <code>create_printer_port</code> method which actually creates the printer port using Windows a PowerShell cmdlet. We&#8217;ll look at the <code>create_printer_port</code> method next week. The <code>create_printer_port</code> method call is wrapped in a <code>converge_by</code> block, which is the secret to implementing <a href="http://lists.opscode.com/sympa/arc/chef/2012-07/msg00025.html"><code>why-run</code></a> mode.</p>
+
+<h2>Why-Run</h2>
+
+<p>Why-Run is fairly simple to implement in a Provider. You just need to define a <code>whyrun_supported?</code> method which returns <code>true</code>, and wrap any code which actually makes changes on the managed node in a <code>converge_by</code> block with an appropriate message about what the code would do if you actually converged the node. For example, in our <code>:create</code> action, we wrap the <code>create_printer_port</code> method call in a <code>converge_by</code> block with a log message which says we would have created a printer port.</p>
+
+<h2>The <code>load_current_resource</code> method</h2>
+
+<p>The <code>load_current_resource</code> method is proably the hardest to understand how to actually write. Conceptually, it&#8217;s fairly straighforward. Using the Resource (<code>windows_printer_port</code>) attributes which the user specified in the Recipe, <code>load_current_resource</code> tries to find, on the server, an existing printer port which matches the one we are trying to create. If it finds a match, it sets <code>@current_resource.exists</code> to <code>true</code>. Remember that <a href="http://dougireton.com/blog/2012/12/31/creating-an-lwrp/">last week</a> we created the <code>exists</code> attribute by setting an <code>attr_accessor :exists</code> on our Resource. Now, we get to use it.</p>
+
+<p>You should know that the <code>load_current_resource</code> method is already defined on the <code>Chef::Provider</code> class. You just need to define, or <a href="http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method"><em>override</em></a> the method in your own Provider. Chef will call the <code>load_current_resouce</code> method automatically when it <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background">iterates over the ResourceCollection during the chef client execution phase</a></p>
+
+<h2>Just Gettin&#8217; By&#8230;</h2>
+
+<p>We are just doing the bare minimum in our <code>load_current_resource</code> method. For creating and deleting printer ports, this is probably enough. If we wanted to be able to <em>modify</em> a printer port, we would need to load in all the attributes from the current printer port on the managed node so we would have them available for comparison.</p>
+
+<p>For example, if we wanted to modify an existing printer port to change the <code>snmp_enabled</code> attribute from <code>false</code> to <code>true</code>, we would need to query the existing printer port on the server to see if SNMP was enabled or not, and save that value to <code>@current_resource.snmp_enabled</code> for use later in our <code>:modify</code> action.</p>
+
+<figure class='code'><figcaption><span>load_current_resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">load_current_resource</span>
+</span><span class='line'>  <span class="vi">@current_resource</span> <span class="o">=</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Resource</span><span class="o">::</span><span class="no">WindowsPrinterPort</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">port_exists?</span><span class="p">(</span><span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># TODO: Set @current_resource port properties from registry</span>
+</span><span class='line'>    <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><code>load_current_resource</code> nuts and bolts</h2>
+
+<p>So for our bare minimum <code>load_current_resource</code> method, we need to set <code>@current_resource</code> to an instance of <code>Chef::Resource::WindowsPrinterPort</code> and copy one or more attributes from the <code>@new_resource</code>, which is passed in from the <code>windows_printer_port</code> Resource in the Recipe. In other words, Chef  creates the <code>@new_resource</code> class instance from the attributes in the Recipe and makes it available to the Provider automatically.</p>
+
+<p>In this case, to determine if the printer port already exists, we need to query the Windows Registry using the <code>port_name</code> attribute. The <code>port_name</code> is usually <code>IP_&lt;ipv4_address&gt;</code>, but could could be anthing if the user specified a custom <code>port_name</code> in the Recipe.</p>
+
+<p>So in line 5 above, we set <code>@current_resouce.port_name</code> from <code>@new_resource.port_name</code> if the user specified a custom port name, or we use <code>IP_&lt;ipv4_address&gt;</code> if the user didn&#8217;t specify a custom port name.</p>
+
+<h2><code>port_exists?</code></h2>
+
+<p>We then call our <code>port_exists?</code> method which queries the Windows Registry and returns <code>true</code> if the port already exists or <code>false</code> if it doesn&#8217;t. We have a <code># TODO</code> note in our code where we would load in additional printer port attributes from the registry in the future.</p>
+
+<p>Finally, we set our <code>@current_resource.exists</code> attribute to <code>true</code> since we now know that the printer port already exists.</p>
+
+<h2>Summary</h2>
+
+<p>This week we learned how to create the basic skeleton for Action methods (<code>:create</code>, <code>:delete</code>, etc.), how to support <code>why-run</code> mode, and how to use the <code>load_current_resource</code> method to determine if the Resource we are trying to create already exsists on the managed node.</p>
+
+<p>Next week, we&#8217;ll cover the <code>create_printer_port</code>, and <code>port_exists?</code> private methods which do the real work on the server.</p>
+
+<h2>Feedback</h2>
+
+<p>Do you have any good examples of Providers which do something especially cool? Maybe from an LWRP you wrote? Or have you found Providers challenging to write? I&#8217;d love to hear your feedback in the comments. Thanks!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Creating an LWRP, part 1: The Resource]]></title>
