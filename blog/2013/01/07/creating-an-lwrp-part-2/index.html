@@ -214,9 +214,9 @@
 
 <p>Why-Run is fairly simple to implement in a Provider. You just need to define a <code>whyrun_supported?</code> method which returns <code>true</code>, and wrap any code which actually makes changes on the managed node in a <code>converge_by</code> block with an appropriate message about what the code would do if you actually converged the node. For example, in our <code>:create</code> action, we wrap the <code>create_printer_port</code> method call in a <code>converge_by</code> block with a log message which says we would have created a printer port.</p>
 
-<p>Finally, you don&#8217;t need to call <code>new_resource.updated_by_last_action(true)</code> because the <code>converge_by</code> block does that for you automatically.</p>
+<p>If you&#8217;ve looked at Provider code in the past, or have written LWRPs, you have probably seen the <code>new_resource.updated_by_last_action(true)</code> method call in the Provider Actions. This method call supports Notifications. So if the Resource changed, it would <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Keyword:action">notify other resources</a>.</p>
 
-<p> If you&#8217;ve looked at Provider code in the past, or have written LWRPs, you have probably seen the <code>new_resource.updated_by_last_action(true)</code> method call in the Provider Actions. This method call supports Notifications. So if the Resource changed, it would <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Keyword:action">notify other resources</a>.</p>
+<p>When you implement Why-Run, you don&#8217;t need to call <code>new_resource.updated_by_last_action(true)</code> because the <code>converge_by</code> block does that for you automatically.</p>
 
 <h2>The <code>load_current_resource</code> method</h2>
 
