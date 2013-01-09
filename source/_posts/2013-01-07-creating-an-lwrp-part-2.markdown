@@ -84,15 +84,21 @@ So if our printer port hasn't yet been created, we call the `create_printer_port
 
 Why-Run is fairly simple to implement in a Provider. You just need to define a `whyrun_supported?` method which returns `true`, and wrap any code which actually makes changes on the managed node in a `converge_by` block with an appropriate message about what the code would do if you actually converged the node. For example, in our `:create` action, we wrap the `create_printer_port` method call in a `converge_by` block with a log message which says we would have created a printer port.
 
+If you've looked at Provider code in the past, or have written LWRPs, you have probably seen the `new_resource.updated_by_last_action(true)` method call in the Provider Actions. This method call supports Notifications. So if the Resource changed, it would [notify other resources] [6].
+
+When you implement Why-Run, you don't need to call `new_resource.updated_by_last_action(true)` because the `converge_by` block does that for you automatically.
+
+[6]: http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Keyword:action
+
 ## The `load_current_resource` method
 
-The `load_current_resource` method is proably the hardest to understand how to actually write. Conceptually, it's fairly straighforward. Using the Resource (`windows_printer_port`) attributes which the user specified in the Recipe, `load_current_resource` tries to find, on the server, an existing printer port which matches the one we are trying to create. If it finds a match, it sets `@current_resource.exists` to `true`. Remember that [last week] [6] we created the `exists` attribute by setting an `attr_accessor :exists` on our Resource. Now, we get to use it.
+The `load_current_resource` method is proably the hardest to understand how to actually write. Conceptually, it's fairly straighforward. Using the Resource (`windows_printer_port`) attributes which the user specified in the Recipe, `load_current_resource` tries to find, on the server, an existing printer port which matches the one we are trying to create. If it finds a match, it sets `@current_resource.exists` to `true`. Remember that [last week] [7] we created the `exists` attribute by setting an `attr_accessor :exists` on our Resource. Now, we get to use it.
 
-You should know that the `load_current_resource` method is already defined on the `Chef::Provider` class. You just need to define, or [_override_] [7] the method in your own Provider. Chef will call the `load_current_resouce` method automatically when it [iterates over the ResourceCollection during the chef client execution phase] [8]
+You should know that the `load_current_resource` method is already defined on the `Chef::Provider` class. You just need to define, or [_override_] [8] the method in your own Provider. Chef will call the `load_current_resouce` method automatically when it [iterates over the ResourceCollection during the chef client execution phase] [9].
 
-[6]: http://dougireton.com/blog/2012/12/31/creating-an-lwrp/
-[7]: http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method
-[8]: http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background
+[7]: http://dougireton.com/blog/2012/12/31/creating-an-lwrp/
+[8]: http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method
+[9]: http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background
 
 ## Just Gettin' By...
 
