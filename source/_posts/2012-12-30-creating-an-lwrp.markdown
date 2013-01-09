@@ -83,11 +83,13 @@ Line 11 defines an `snmp_enabled` attribute, a boolean which defaults to false.
 
 Line 13 defines a `port_protocol` attribute, a Ruby Fixnum, which defaults to 1. The `equal_to` constraint limits the possible values to 1 or 2.
 
-It's important to note that the constraints and defaults in the `windows_printer_port` Resource are very carefully chosen based on knowlege of how the [Win32_TCPPrinterPort] [3] class in Windows works. You can't write a Resource and Provider unless you really understand the underlying resource you are modeling.
+It's important to note that the constraints and defaults in the `windows_printer_port` Resource are very carefully chosen based on knowlege of how the [Win32_TCPIPPrinterPort] [3] class in Windows works. You can't write a Resource and Provider unless you really understand the underlying resource you are modeling.
 
 [3]: http://msdn.microsoft.com/en-us/library/windows/desktop/aa394492(v=vs.11).aspx
 
 I'll explain the `attr_accessor :exists` in more detail next week, but in short, it defines an `exists` property on the Resource so we can test whether a given printer port already exists, so we don't create it again.
 
 
-So that's it for this week. Tune in next week for an overview of writing Providers.
+So that's it for this week. Tune in [next week] [4] for an overview of writing Providers.
+
+[4]: http://dougireton.com/blog/2013/01/07/creating-an-lwrp-part-2/
