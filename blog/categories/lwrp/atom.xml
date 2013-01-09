@@ -4,7 +4,7 @@
   <title><![CDATA[Category: LWRP | Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/blog/categories/lwrp/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-08T23:19:47-08:00</updated>
+  <updated>2013-01-09T07:27:22-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -104,9 +104,15 @@ end</p>
 
 <p>So if our printer port hasn't yet been created, we call the <code>create_printer_port</code> method which actually creates the printer port using Windows a PowerShell cmdlet. We'll look at the <code>create_printer_port</code> method next week. The <code>create_printer_port</code> method call is wrapped in a <code>converge_by</code> block, which is the secret to implementing <a href="http://lists.opscode.com/sympa/arc/chef/2012-07/msg00025.html"><code>why-run</code></a> mode.</p>
 
-<h2>Why-Run</h2>
+<h2>Why-Run - <code>whyrun_supported?</code> and <code>converge_by</code> block</h2>
 
 <p>Why-Run is fairly simple to implement in a Provider. You just need to define a <code>whyrun_supported?</code> method which returns <code>true</code>, and wrap any code which actually makes changes on the managed node in a <code>converge_by</code> block with an appropriate message about what the code would do if you actually converged the node. For example, in our <code>:create</code> action, we wrap the <code>create_printer_port</code> method call in a <code>converge_by</code> block with a log message which says we would have created a printer port.</p>
+
+<h2>Why-Run - <code>new_resource.updated_by_last_action(true)</code> not required</h2>
+
+<p>Finally, you don't need to call <code>new_resource.updated_by_last_action(true)</code> because the <code>converge_by</code> block does that for you automatically.</p>
+
+<p> If you've looked at Provider code in the past, or have written LWRPs, you have probably seen the <code>new_resource.updated_by_last_action(true)</code> method call in the Provider Actions. This method call supports Notifications. So if the Resource changed, it would <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Keyword:action">notify other resources</a>.</p>
 
 <h2>The <code>load_current_resource</code> method</h2>
 
