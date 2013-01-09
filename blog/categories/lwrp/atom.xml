@@ -4,7 +4,7 @@
   <title><![CDATA[Category: LWRP | Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/blog/categories/lwrp/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-09T07:31:43-08:00</updated>
+  <updated>2013-01-09T07:35:31-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -116,7 +116,7 @@ end</p>
 
 <p>The <code>load_current_resource</code> method is proably the hardest to understand how to actually write. Conceptually, it's fairly straighforward. Using the Resource (<code>windows_printer_port</code>) attributes which the user specified in the Recipe, <code>load_current_resource</code> tries to find, on the server, an existing printer port which matches the one we are trying to create. If it finds a match, it sets <code>@current_resource.exists</code> to <code>true</code>. Remember that <a href="http://dougireton.com/blog/2012/12/31/creating-an-lwrp/">last week</a> we created the <code>exists</code> attribute by setting an <code>attr_accessor :exists</code> on our Resource. Now, we get to use it.</p>
 
-<p>You should know that the <code>load_current_resource</code> method is already defined on the <code>Chef::Provider</code> class. You just need to define, or <a href="http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method"><em>override</em></a> the method in your own Provider. Chef will call the <code>load_current_resouce</code> method automatically when it <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background">iterates over the ResourceCollection during the chef client execution phase</a></p>
+<p>You should know that the <code>load_current_resource</code> method is already defined on the <code>Chef::Provider</code> class. You just need to define, or <a href="http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method"><em>override</em></a> the method in your own Provider. Chef will call the <code>load_current_resouce</code> method automatically when it <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background">iterates over the ResourceCollection during the chef client execution phase</a>.</p>
 
 <h2>Just Gettin' By...</h2>
 
