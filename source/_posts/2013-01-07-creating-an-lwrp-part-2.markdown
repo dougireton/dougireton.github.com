@@ -11,7 +11,7 @@ Last week, we looked at part one of creating an LWRP - the Resource. This week, 
 
 <!--more-->
 
-As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy to create Recipes which do a lot of work in a few lines of code.
+As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy for sysadmins to create Recipes which do a lot of work in a few lines of code.
 
 ## The Provider
 
