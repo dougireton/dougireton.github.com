@@ -9,7 +9,7 @@
   <meta name="author" content="Doug Ireton">
 
   
-  <meta name="description" content="Ohai Chefs! Last week, we looked at part one of creating an LWRP - the Resource. This week, we&#8217;ll look at part two - the Provider. We&#8217;ll &hellip;">
+  <meta name="description" content="Ohai Chefs! Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,53 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - Part 3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-13T11:38:00-08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/01/13/creating-an-lwrp-part-3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on the managed node. We looked at implementing Action methods (<code>:create</code>, <code>:delete</code>), using the <code>load_current_resource</code> method to read in attributes of existing resources, and how to support Chef&#8217;s <code>why-run</code> mode.</p>
+
+<p>This week, we&#8217;ll complete the Provider by looking at the <code>port_exists?</code>, <code>create_printer_port</code>, and <code>delete_printer_port</code> methods. The <code>load_current_resource</code> method uses the <code>port_exists?</code> method to determine if the printer port already exists. The latter two methods leverage Windows PowerShell to create and delete printer ports respectively. Collectively, these are the private methods in this class, meant to be called only by the <code>:create</code> and <code>:delete</code> Action methods and <code>load_current_resource</code>.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/01/13/creating-an-lwrp-part-3/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -375,6 +422,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - part 3</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/07/creating-an-lwrp-part-2/">Creating an LWRP, part 2: The Provider</a>
       </li>
     
@@ -388,10 +439,6 @@
     
       <li class="post">
         <a href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/">How to include the Windows Cookbook Helper methods in your Chef recipe</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Creating a git pre-commit hook for Chef cookbooks</a>
       </li>
     
   </ul>

@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-09T07:38:11-08:00</updated>
+  <updated>2013-01-14T23:15:14-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,154 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Creating an LWRP - part 3]]></title>
+    <link href="http://dougireton.github.com/blog/2013/01/13/creating-an-lwrp-part-3/"/>
+    <updated>2013-01-13T11:38:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/01/13/creating-an-lwrp-part-3</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on the managed node. We looked at implementing Action methods (<code>:create</code>, <code>:delete</code>), using the <code>load_current_resource</code> method to read in attributes of existing resources, and how to support Chef&#8217;s <code>why-run</code> mode.</p>
+
+<p>This week, we&#8217;ll complete the Provider by looking at the <code>port_exists?</code>, <code>create_printer_port</code>, and <code>delete_printer_port</code> methods. The <code>load_current_resource</code> method uses the <code>port_exists?</code> method to determine if the printer port already exists. The latter two methods leverage Windows PowerShell to create and delete printer ports respectively. Collectively, these are the private methods in this class, meant to be called only by the <code>:create</code> and <code>:delete</code> Action methods and <code>load_current_resource</code>.</p>
+
+<!--more-->
+
+
+<h2><a href="http://en.wikipedia.org/wiki/Object-oriented_programming">OOP</a> (<a href="http://en.wikipedia.org/wiki/Whoomp!_(There_It_Is)">there it is</a>)&#8230;</h2>
+
+<p>We&#8217;ve moved some of the code which might otherwise go into our <code>:create</code> and <code>:delete</code> Action methods into separate methods which create and delete printer ports using PowerShell. Breaking up our methods into smaller, logical chunks follows the Composed Method technique which I first learned about in <a href="http://www.amazon.com/Eloquent-Ruby-Addison-Wesley-Professional/dp/0321584104">Eloquent Ruby</a> by Russ Olsen.</p>
+
+<blockquote><p>&#8220;The composed method technique advocates dividing your class up into methods that have three characteristics. First, each method should do a single thing—focus on solving a single aspect of the problem. By concentrating on one thing, your methods are not only easier to write, they are also easier to understand. </p><p>Second, each method needs to operate at a single conceptual level: Simply put, don’t mix high-level logic with the nitty-gritty details. A method that implements the business logic around, say, currency conversions, should not suddenly veer off into the details of how the various accounts are stored in a database. </p><p>Finally, each method needs to have a name that reflects its purpose.&#8221;</p></blockquote>
+
+
+<p>Olsen, Russ (2011-02-07). <em>Eloquent Ruby</em> (Addison-Wesley Professional Ruby Series) (Kindle Locations 2102-2107). Pearson Education (USA). Kindle Edition.</p>
+
+<h2>The <code>:create</code> action</h2>
+
+<p>Let&#8217;s look at the <code>:create</code> Action to see how we applied the Composed Method technique.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">action</span> <span class="ss">:create</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2"> already exists - nothing to do.&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Create </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">create_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even without comments it should be pretty clear what this method does; it almost reads like plain English. If the printer port already exists, it logs a message and does nothing, otherwise it creates a printer port. We have made it so readable by extracting out the code which checks for a pre-existing printer port into the <code>load_current_resource</code> method, and the code which creates the printer port into the <code>create_printer_port</code> method.</p>
+
+<p>By composing our <code>:create</code> method this way, it&#8217;s become a template. You should be able to use the code above for almost any <code>:create</code> Action in any LWRP you will write, just by changing the name of the <code>create_printer_port</code> method to something more suitable.</p>
+
+<p>Now, let&#8217;s look at the private <code>create_printer_port</code> method, which actually creates the printer port.</p>
+
+<h2><code>create_printer_port</code> method</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_printer_port</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">port_name</span> <span class="o">=</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># create the printer port using PowerShell</span>
+</span><span class='line'>  <span class="n">powershell</span> <span class="s2">&quot;Creating printer port </span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="si">}</span><span class="s2">&quot;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">code</span> <span class="o">&lt;&lt;-</span><span class="no">EOH</span>
+</span><span class='line'>
+</span><span class='line'><span class="sh">      Set-WmiInstance -class Win32_TCPIPPrinterPort `</span>
+</span><span class='line'><span class="sh">        -EnableAllPrivileges `</span>
+</span><span class='line'><span class="sh">        -Argument @{ HostAddress = &quot;#{ new_resource.ipv4_address }&quot;;</span>
+</span><span class='line'><span class="sh">                     Name        = &quot;#{ port_name }&quot;;</span>
+</span><span class='line'><span class="sh">                     Description = &quot;#{ new_resource.port_description }&quot;;</span>
+</span><span class='line'><span class="sh">                     PortNumber  = &quot;#{ new_resource.port_number }&quot;;</span>
+</span><span class='line'><span class="sh">                     Protocol    = &quot;#{ new_resource.port_protocol }&quot;;</span>
+</span><span class='line'><span class="sh">                     SNMPEnabled = &quot;$#{ new_resource.snmp_enabled }&quot;;</span>
+</span><span class='line'><span class="sh">                  }</span>
+</span><span class='line'><span class="no">    EOH</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>create_printer_port</code> method starts off by setting a local variable, <code>port_name</code> which is set to the <code>new_resource.port_name</code> if the user set the <code>port_name</code> attribute, or <code>IP_&lt;ipv4_address&gt;</code> if the user didn&#8217;t set <code>port_name</code>.</p>
+
+<p>After that, it&#8217;s just a straightforward PowerShell resource block which creates the printer port using the attributes passed in from the <code>windows_printer_port</code> resource in the Recipe.</p>
+
+<p>One thing to note is how we are using <a href="http://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Literals#Interpolation">Ruby String Interpolation</a> to pass our Resource Attributes in to the PowerShell script.The <code>"#{ new_resource.foo }"</code> sections are how we can pass Ruby variables into a PowerShell or batch script. Pretty handy.</p>
+
+<h2><code>port_exists?</code> method</h2>
+
+<p><code>port_exists?</code> is a simple method which queries the Windows Registry to see if the printer port has already been created. The <code>load_current_resource</code> method calls <code>port_exists?</code>, and if the printer port exists, it sets <code>@current_resource.exists</code> to <code>true</code>.</p>
+
+<p>One thing you should notice is that the question mark is part of the <code>port_exists?</code> method name. In Ruby, it is perfectly acceptable, and expected that methods which return <em>true</em> or <em>false</em> have a <code>?</code> appended to the method name.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">PORTS_REG_KEY</span> <span class="o">=</span> <span class="s1">&#39;HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors\Standard TCP/IP Port\Ports\\&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">port_exists?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">port_reg_key</span> <span class="o">=</span> <span class="no">PORTS_REG_KEY</span> <span class="o">+</span> <span class="nb">name</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Checking to see if this reg key exists: &#39;</span><span class="si">#{</span> <span class="n">port_reg_key</span> <span class="si">}</span><span class="s2">&#39;&quot;</span>
+</span><span class='line'>  <span class="no">Registry</span><span class="o">.</span><span class="n">key_exists?</span><span class="p">(</span><span class="n">port_reg_key</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code block creates a Ruby <a href="http://rubylearning.com/satishtalim/ruby_constants.html">Constant</a>, the <code>PORTS_REG_KEY</code>, which is the key we&#8217;ll query to determine if the printer port already exists.</p>
+
+<p>In our <code>port_exists?</code> method, we call the Windows Cookbook <a href="https://github.com/opscode-cookbooks/windows#library-methods"><code>Registry.key_exists?</code></a> method which returns <code>true</code> or <code>false</code>, telling us whether the printer port is already in the Windows Registry or not. Notice that <code>?</code> in the method name again?</p>
+
+<h2><code>delete_printer_port</code> method</h2>
+
+<p>The <code>delete_printer_port</code> is much the same as the <code>create_printer_port</code> method so I won&#8217;t cover it here.</p>
+
+<h2>Wrap-up</h2>
+
+<p>So now we&#8217;ve completed our look at how to create LWRPs. We&#8217;ve covered both the Reource and Provider and looked at structuring your Ruby methods using the Composed Methods pattern. Certainly, my printer port LWRP isn&#8217;t perfect. In writing these blog posts, I&#8217;ve already come up with some changes to make it better, but the biggest glaring omission is the complete lack of test coverage!</p>
+
+<h2>Next Steps</h2>
+
+<p>We&#8217;ll probably take a break from LWRPs next week but look for a blog post in the near future on testing LWRPs using my absolute favorite Ruby testing libarary, <a href="http://rspec.info/">RSpec</a>. Huge shout out to <a href="https://twitter.com/jtimberman">Joshua Timberman</a> to whom I&#8217;m indebted for great example <a href="https://github.com/opscode-cookbooks/runit/commits/CHEF-154">RSpec tests in the Runit</a> cookbook.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Creating an LWRP, part 2: The Provider]]></title>
@@ -25,7 +173,7 @@
 <!--more-->
 
 
-<p>As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy to create Recipes which do a lot of work in a few lines of code.</p>
+<p>As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy for sysadmins to create Recipes which do a lot of work in a few lines of code.</p>
 
 <h2>The Provider</h2>
 
