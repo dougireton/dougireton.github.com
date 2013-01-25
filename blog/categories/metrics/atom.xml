@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: metrics | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.com/blog/categories/metrics/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.com/"/>
+  <updated>2013-01-24T22:10:55-08:00</updated>
+  <id>http://dougireton.github.com/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Get Chef Clients by version]]></title>
+    <link href="http://dougireton.github.com/blog/2013/01/19/get-chef-clients-by-version/"/>
+    <updated>2013-01-19T20:19:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/01/19/get-chef-clients-by-version</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>At work, we're being converted to the gospel of Etsy's <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Church of Graphs</a>. We're sending Chef run times and other metrics to a combination of <a href="https://github.com/etsy/statsd/">StatsD</a>, <a href="http://graphite.wikidot.com/">Graphite</a>, and <a href="http://fdietz.github.com/team_dashboard/">Team Dashboard</a>. Last week, I wanted to add a graph of chef clients by version. In other words, I wanted to see how many Chef 0.10.8, and 10.12 clients we have left to upgrade.</p>
+
+<p>This week, we'll see how to get Chef client versions from the Chef Server, including one way which turned out to be more than <strong>30 times faster</strong> in my tests.</p>
+
+<!--more-->
+
+
+<h2>The First Attempt</h2>
+
+<p>I needed to get a count of Chef clients grouped by version. I envisioned ending up with a hash like this:</p>
+
+<p>``` ruby
+  {</p>
+
+<pre><code>'10.12.0' =&gt; 112,
+'10.16.2' =&gt; 534,
+'10.18.2' =&gt; 1
+</code></pre>
+
+<p>  }
+```</p>
+
+<p>My first thought was to do this:</p>
+
+<p><code>bash
+$ knife node list | xargs -I {} knife node show {} -a chef_packages.chef.version -Fj
+</code></p>
+
+<p>This pipes a list of all nodes in an org to <code>knife node show</code> and returns <code>chef_packages.chef.version</code> in JSON format.</p>
+
+<p>This works, but it takes a <strong>loooong</strong> time, nearly 40 <strong>minutes</strong> on my quad-core Macbook Pro against our Private Chef server to get the Chef client version for 908 nodes, or ~2.4 seconds per node.</p>
+
+<p>``` bash
+knife node list</p>
+
+<pre><code>1.82s user 0.36s system 75% cpu 2.878 total
+</code></pre>
+
+<p>xargs -I {} knife node show {} -a chef_packages.chef.version</p>
+
+<pre><code>1771.53s user 278.24s system 85% cpu ** 39:46.55 total **
+</code></pre>
+
+<p>```</p>
+
+<p>This takes so long because <code>knife node show</code> makes a round-trip to the Chef server for each node. We need to speed this up, preferably by an order of magnitude.</p>
+
+<h2>The Second Attempt</h2>
+
+<p>What if we asked the Chef server to get Chef Client version info for every node in the org and send it to us in one batch?</p>
+
+<p><code>bash
+knife search node 'name:*' -a chef_packages.chef.version –Fj
+</code></p>
+
+<p>This approach is much more efficient; just over a minute instead of 40 minutes:
+```bash
+knife search node 'name:*' -a chef_packages.chef.version –Fj</p>
+
+<pre><code>40.72s user 1.54s system 57% cpu ** 1:13.81 total **
+</code></pre>
+
+<p>```</p>
+
+<p>The results from the knife search command look like this; easily parsable JSON.</p>
+
+<p>```javascript
+{
+  "results": 3,
+  "rows": [</p>
+
+<pre><code>{
+  "chef_packages.chef.version": "10.16.2",
+  "id": "webserver01.example.com"
+},
+{
+  "chef_packages.chef.version": "10.16.2",
+  "id": "webserver02.example.com"
+},
+{
+  "chef_packages.chef.version": "10.12.0",
+  "id": "db01.example.com"
+}
+</code></pre>
+
+<p>  ]
+}
+```</p>
+
+<h2>Ohai Spelunking</h2>
+
+<p>But, hold on a second, how did I know the Chef client version attribute is named <code>chef_packages.chef.version</code>? I didn't, but here's how I found it:</p>
+
+<p><code>bash
+knife node show myserver01.example.com -l | grep -C 5 10.16.2
+</code></p>
+
+<p>I knew that <code>myserver01.example.com</code> was running Chef Client 10.16.2. I did a <code>knife node show</code> with the <code>-l</code> option to show <strong>all</strong> Ohai attributes and grep'd for <code>10.16.2</code> with five lines of context above and below (<code>-C 5</code>).</p>
+
+<p>Here's the result of that whole command:</p>
+
+<p>``` bash
+Automatic Attributes (Ohai Data):
+chef_packages:  <br/>
+  chef:</p>
+
+<pre><code>chef_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.16.2/lib
+version:    10.16.2
+</code></pre>
+
+<p>  ohai:</p>
+
+<pre><code>ohai_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/ohai-6.14.0/lib/ohai
+version:    6.14.0
+</code></pre>
+
+<p>command:           {}
+counters:
+```</p>
+
+<p>From the output above, I can walk down the <code>chef_packages</code> attribute to determine the attribute I'm looking for is <code>chef_packages.chef.version</code>.</p>
+
+<h2>Parsing the Results</h2>
+
+<p>So, now that we have the raw JSON data, how can we turn it into this?</p>
+
+<p>``` ruby
+  {</p>
+
+<pre><code>'10.12.0' =&gt; 112,
+'10.16.2' =&gt; 534,
+'10.18.2' =&gt; 1
+</code></pre>
+
+<p>  }
+```</p>
+
+<p>Let's take a look at a script to parse the JSON list of nodes into a nice "grouped-by" version hash:</p>
+
+<p>```ruby
+require 'json'</p>
+
+<p>KNIFE_RB = '.chef/knife.rb'
+NODE_LIST = <code>knife search node -c #{ KNIFE_RB } 'name:*' -a chef_packages.chef.version --format json 2&gt;&amp;1</code></p>
+
+<p>def get_chef_clients_by_version(nodes)</p>
+
+<p>  # turn JSON into Ruby objects
+  nodes_json = JSON.parse nodes</p>
+
+<p>  # create an array of all chef client versions
+  client_versions = nodes_json['rows'].map { |item| item['chef_packages.chef.version'] }</p>
+
+<p>  # initialize an empty hash to store our final counts grouped by version
+  number_of_clients_by_version = Hash.new(0)</p>
+
+<p>  # For each item in the client_versions array, create a unique key in our
+  # number_of_clients_by_version hash and increment our counter
+  client_versions.each { |version| number_of_clients_by_version[version] += 1 }</p>
+
+<p>  number_of_clients_by_version
+end</p>
+
+<p>puts get_chef_clients_by_version(NODE_LIST)
+```</p>
+
+<p>Let's take it line by line. On line one we're requiring <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/json/rdoc/JSON.html">JSON</a>. On line four we're executing the <code>knife search</code> command. Lines 6 - 21 are a function to parse the node data into our final count of versions.</p>
+
+<h2>The <code>get_chef_clients_by_version</code> method</h2>
+
+<p>This method is where all the exciting stuff happens. On line 9, we're parsing the JSON data and creating a Ruby data structure which looks like this:</p>
+
+<p><code>ruby
+{"results"=&gt;3,
+ "rows"=&gt;
+  [{"chef_packages.chef.version"=&gt;"10.16.2", "id"=&gt;"webserver01.example.com"},
+   {"chef_packages.chef.version"=&gt;"10.16.2", "id"=&gt;"webserver02.example.com"},
+   {"chef_packages.chef.version"=&gt;"10.16.2", "id"=&gt;"db01.example.com"},
+  ]
+}
+</code></p>
+
+<p>Line 12 is my favorite line of the method.</p>
+
+<p><code>ruby
+  # create an array of all chef client versions
+  client_versions = nodes_json['rows'].map { |item| item['chef_packages.chef.version'] }
+</code></p>
+
+<p>It uses Ruby's super useful <a href="http://www.ruby-doc.org/core-1.9.3/Enumerable.html#method-i-map"><code>map</code></a> method to create an simple array of versions from the <code>rows</code> array of two-element hashes. The result of the <code>map</code> looks like this:</p>
+
+<p><code>ruby
+["10.16.2", "10.16.2", "10.12.0"]
+</code></p>
+
+<p>From there we create and return the <code>number_of_clients_by_version</code> hash to hold our results and iterate over each item in the <code>client_versions</code> array, counting the nodes by version.</p>
+
+<p>```ruby</p>
+
+<h1>initialize an empty hash to store our final counts grouped by version</h1>
+
+<p>  number_of_clients_by_version = Hash.new(0)</p>
+
+<p>  # For each item in the client_versions array, create a unique key in our
+  # number_of_clients_by_version hash and increment our counter
+  client_versions.each { |version| number_of_clients_by_version[version] += 1 }
+```</p>
+
+<p>Thanks to my Talented and Gifted&trade; co-worker <a href="https://twitter.com/moserke">Kevin</a> for <a href="http://stackoverflow.com/questions/569694/count-duplicate-elements-in-ruby-array">this StackOverflow link</a> which explained how to do the group-by version.</p>
+
+<p>So here's the result of the script, which is exactly what we set out to accomplish:</p>
+
+<p>```ruby
+  {</p>
+
+<pre><code>'10.12.0' =&gt; 112,
+'10.16.2' =&gt; 534,
+'10.18.2' =&gt; 1
+</code></pre>
+
+<p>  }
+```</p>
+
+<h2><a href="http://www.youtube.com/watch?v=WEQnzs8wl6E">Fade to Black</a></h2>
+
+<p>So there you have it. We compared two approaches to returning data from the Chef server, with one being an order of magnitude faster. We figured out how to find specific Ohai attribute names, and we created a script to transform the raw data to something truly useful.</p>
+
+<p>These posts seem to keep getting longer, so maybe next week, we'll have something short and sweet. Thanks for reading and I'd love to hear your comments.</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,1 +1,591 @@
-My Octopress Page is coming soon &hellip;
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! At work, we&#8217;re being converted to the gospel of Etsy&#8217;s Church of Graphs. We&#8217;re sending Chef run times and other metrics &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.com/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/19/get-chef-clients-by-version/">Get Chef Clients by Version</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-19T20:19:00-08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/01/19/get-chef-clients-by-version/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>At work, we&#8217;re being converted to the gospel of Etsy&#8217;s <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Church of Graphs</a>. We&#8217;re sending Chef run times and other metrics to a combination of <a href="https://github.com/etsy/statsd/">StatsD</a>, <a href="http://graphite.wikidot.com/">Graphite</a>, and <a href="http://fdietz.github.com/team_dashboard/">Team Dashboard</a>. Last week, I wanted to add a graph of chef clients by version. In other words, I wanted to see how many Chef 0.10.8, and 10.12 clients we have left to upgrade.</p>
+
+<p>This week, we&#8217;ll see how to get Chef client versions from the Chef Server, including one way which turned out to be more than <strong>30 times faster</strong> in my tests.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/01/19/get-chef-clients-by-version/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - Part 3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-13T11:38:00-08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/01/13/creating-an-lwrp-part-3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on the managed node. We looked at implementing Action methods (<code>:create</code>, <code>:delete</code>), using the <code>load_current_resource</code> method to read in attributes of existing resources, and how to support Chef&#8217;s <code>why-run</code> mode.</p>
+
+<p>This week, we&#8217;ll complete the Provider by looking at the <code>port_exists?</code>, <code>create_printer_port</code>, and <code>delete_printer_port</code> methods. The <code>load_current_resource</code> method uses the <code>port_exists?</code> method to determine if the printer port already exists. The latter two methods leverage Windows PowerShell to create and delete printer ports respectively. Collectively, these are the private methods in this class, meant to be called only by the <code>:create</code> and <code>:delete</code> Action methods and <code>load_current_resource</code>.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/01/13/creating-an-lwrp-part-3/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/07/creating-an-lwrp-part-2/">Creating an LWRP, Part 2: The Provider</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-07T14:35:00-08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/01/07/creating-an-lwrp-part-2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Last week, we looked at part one of creating an LWRP - the Resource. This week, we&#8217;ll look at part two - the Provider. We&#8217;ll look at a real Provider which uses Ruby and PowerShell to create and delete printer ports. Since the Provider code is so long, I&#8217;ll cover the first half this week, and the second half next week. The first half will cover the <code>:create</code> and <code>:delete</code> Action methods, how to support <code>why_run</code> (dry-run or what-if mode) and how to use the <code>load_current_resource</code> method.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/01/07/creating-an-lwrp-part-2/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, Part 1: The Resource</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-31T11:00:00-08:00" pubdate data-updated="true">Dec 31<span>st</span>, 2012</time>
+        
+         | <a href="/blog/2012/12/31/creating-an-lwrp/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>If you&#8217;ve written any Chef recipes at all, you&#8217;ve almost certainly used Lightweight Resources and Providers (LWRPs). LWRPs enable you start/stop services, install packages, manage firewalls, deploy apps and many other common configuration tasks. <a href="http://docs.opscode.com/essentials_cookbook_lwrp.html">LWRPs</a> combine a simple interface (Resource) with one or more usually OS-specific implementations (Providers). For example this resource installs Windows packages:</p>
+
+<figure class='code'><figcaption><span>Windows Package Resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">windows_package</span> <span class="s2">&quot;7-Zip 9.20 (x64 edition)&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;http://downloads.sourceforge.net/sevenzip/7z920-x64.msi&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>windows_package</code> <em>provider</em>, which comes with the Windows cookbook, is 250 lines of code. It handles five different kinds of package types, e.g. msi, inno, nullsoft, etc. LWRPs make it very easy for sysadmins to write Chef recipes with a minimal amount of code because someone has already done the hard work of writing the Resource and Provider.</p>
+
+<p>Even though Opscode has provided many LWRPs &#8220;out of the box&#8221;, you will still need to write your own at some point. This week we&#8217;ll look at how to write an LWRP starting with the Resource part. Next week, we&#8217;ll complete the two-part series by learning how to write the corresponding Provider.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/31/creating-an-lwrp/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically Upgrading Chef Client on Vagrant Up</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-23T19:51:00-08:00" pubdate data-updated="true">Dec 23<span>rd</span>, 2012</time>
+        
+         | <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>If you do enough Vagrant testing, you&#8217;ll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen boxes come with Chef 10.14.4, not the latest 10.16.2 version. In this post I&#8217;ll show you how to automatically upgrade the Chef client on <code>vagrant up</code>. The trick is to use two <code>config.vm.provision</code> blocks in your Vagrantfile.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/">How to Include the Windows Cookbook Helper Methods in Your Chef Recipe</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-16T20:06:00-08:00" pubdate data-updated="true">Dec 16<span>th</span>, 2012</time>
+        
+         | <a href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>We&#8217;ve been writing a lot of Windows Cookbooks and Recipes lately and it&#8217;s been very helpful to be able to use the helper methods in the Opscode Windows cookbook. In this post I&#8217;ll show you how to include and use those helper methods. You can generalize this to library methods from any cookbook, even your own cookbooks.</p>
+
+<h2>What are the helper methods?</h2>
+
+<p>The Windows cookbook includes several nice <a href="https://github.com/opscode-cookbooks/windows/tree/master/libraries">helper methods</a> for dealing with windows paths and the registry. Unfortunately, it&#8217;s not obvious how to use these helper methods in a recipe. At first I tried the standard Ruby <code>require</code> statement in a recipe, but this doesn&#8217;t work. My Talented and Gifted &trade; teammate Kevin was able to explain why to me, but now I can&#8217;t remember the reason.</p>
+
+<h2>How do I use them in a recipe?</h2>
+
+<p>Just use <code>::Chef::Recipe.send(:include, Windows::Helper)</code> like this:</p>
+
+<figure class='code'><figcaption><span>::Chef::Recipe.send(:include, Windows::Helper)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># include Windows::Helper from Opscode Windows Cookbook</span>
+</span><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">Windows</span><span class="o">::</span><span class="no">Helper</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># now you can call helper methods like win_friendly_path directly</span>
+</span><span class='line'><span class="n">my_batch_file</span> <span class="o">=</span> <span class="n">win_friendly_path</span><span class="p">(</span>
+</span><span class='line'>                     <span class="o">::</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;cookbook&#39;</span><span class="o">][</span><span class="s1">&#39;batch_dir&#39;</span><span class="o">]</span><span class="p">,</span><span class="s1">&#39;foo.bat&#39;</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">execute</span> <span class="s2">&quot;My batch file&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">command</span> <span class="n">my_batch_file</span>
+</span><span class='line'>  <span class="n">creates</span> <span class="s2">&quot;e:/logs/my_batch_file.log&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Creating a Git Pre-commit Hook for Chef Cookbooks</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-10T21:02:00-08:00" pubdate data-updated="true">Dec 10<span>th</span>, 2012</time>
+        
+         | <a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>We&#8217;ve been using Chef in our group now for a few months, but until now we haven&#8217;t been serious about linting or testing our Chef cookbooks. I decided to get serious today and write a Git pre-commit <a href="http://git-scm.com/docs/githooks">hook</a> for linting cookboks.</p>
+
+<p>Git runs the pre-commit hook script before each commit. This allows you to run code quality checks so only clean code is committed to your repo.</p>
+
+<p>It&#8217;s important to note that git hooks aren&#8217;t copied down when you clone a git repo. Each developer will need to create his or her own pre-commit hook script in the .git/hooks/ directory of the repo. If you wanted to get fancy, you could keep git hook scripts in a &#8220;utility&#8221; repo and have a rake script to copy them to the right location.</p>
+
+<p>The pre-commit script below does four things:</p>
+
+<ol>
+<li>Runs a built-in Git whitespace check for trailing whitespace, mixed tabs and spaces, etc.</li>
+<li>Runs <a href="http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test">&#8216;knife cookbook test&#8217;</a> to check Ruby and ERB template syntax.</li>
+<li>Runs <a href="https://github.com/turboladen/tailor">&#8216;tailor&#8217;</a> to check your code against Ruby style conventions.</li>
+<li>Runs <a href="http://acrmp.github.com/foodcritic/">&#8216;foodcritic&#8217;</a>, the de facto Chef cookbook linting tool.</li>
+</ol>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/get-chef-clients-by-version/">Get Chef Clients by version</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - part 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/07/creating-an-lwrp-part-2/">Creating an LWRP, part 2: The Provider</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, part 1: The Resource</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically upgrading Chef client on Vagrant Up</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("dougireton", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/dougireton" class="twitter-follow-button" data-show-count="false">Follow @dougireton</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

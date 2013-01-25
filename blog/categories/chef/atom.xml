@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: chef | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.com/blog/categories/chef/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.com/"/>
+  <updated>2013-01-24T22:10:55-08:00</updated>
+  <id>http://dougireton.github.com/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Automatically upgrading Chef client on Vagrant Up]]></title>
+    <link href="http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/"/>
+    <updated>2012-12-23T19:51:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>If you do enough Vagrant testing, you'll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen boxes come with Chef 10.14.4, not the latest 10.16.2 version. In this post I'll show you how to automatically upgrade the Chef client on <code>vagrant up</code>. The trick is to use two <code>config.vm.provision</code> blocks in your Vagrantfile.</p>
+
+<!--more-->
+
+
+<h2>Download the Opscode Chef-Client cookbook and add an Upgrade recipe</h2>
+
+<p>You'll need a Chef recipe to upgrade your Chef client. Below is a recipe we added to our fork of the <a href="http://community.opscode.com/cookbooks/chef-client">Opscode Chef-Client</a> cookbook.</p>
+
+<p>``` ruby Chef Client Upgrade Recipe</p>
+
+<h1>put this in <code>chef-client/recipes/upgrade.rb</code></h1>
+
+<p>windows_package "Opscode Chef Client Installer for Windows v10.16.2" do
+  source "https://www.opscode.com/chef/install.msi"
+  action :install
+end
+```
+We're using Windows in this case but obviously, use the Chef client for your platform. We've successfully used this pattern with Linux boxes as well.</p>
+
+<h2>In your Vagrantfile</h2>
+
+<p>``` ruby Vagrantfile
+config.vm.provision :chef_solo do |chef|
+  # this provision block upgrades the Chef Client before the real
+  # Chef run starts
+  chef.run_list = [</p>
+
+<pre><code>"recipe[chef-client::upgrade]"
+</code></pre>
+
+<p>  ]
+end</p>
+
+<h1>This is the real Chef run</h1>
+
+<p>config.vm.provision :chef_solo do |chef|
+  chef.run_list = [</p>
+
+<pre><code>"recipe[my_recipe]",
+"recipe[my_other_recipe::beer]"
+</code></pre>
+
+<p>  ]
+end
+```</p>
+
+<h2>OK, but two Chef runs? Really?</h2>
+
+<p><blockquote><p>"But, why can't you just use a single provision block and add the Chef Client upgrade recipe to the first position in the run list?"</p></blockquote>
+That was my question the first time Kevin showed me this pattern. He explained,
+<blockquote><p>"Because, Chef will complete the Chef run with the same version it started with."</p></blockquote></p>
+
+<p>In other words, the first Chef run starts with 10.x and upgrades itself. The second Chef run starts with the new, shiny, upgraded client.</p>
+
+<h2>Credit Where Credit is Due</h2>
+
+<p>Once again, mad props to my Talented and Gifted&trade; teammate <a href="https://twitter.com/moserke">Kevin</a> for figuring this out. This really helped us out when we were stuck with a RHEL 5.8 Vagrant box with Chef 10.8 and needed to test Chef recipes written for Chef 10.16.2.</p>
+
+<h2>Ladies and Gentlemen, <code>'vagrant up'</code></h2>
+
+<p>Now everytime, you <code>vagrant destroy</code> and <code>vagrant up</code>, you'll have the latest Chef Client without having to crack open and repackage your Vagrant box. Happy testing and let me know how it works for you.</p>
+]]></content>
+  </entry>
+  
+</feed>

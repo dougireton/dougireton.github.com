@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Creating a git pre-commit hook for Chef cookbooks - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="We&#8217;ve been using Chef in our group now for a few months, but until now we haven&#8217;t been serious about linting or testing our Chef &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.com/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Creating a Git Pre-commit Hook for Chef Cookbooks</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-10T21:02:00-08:00" pubdate data-updated="true">Dec 10<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>We&#8217;ve been using Chef in our group now for a few months, but until now we haven&#8217;t been serious about linting or testing our Chef cookbooks. I decided to get serious today and write a Git pre-commit <a href="http://git-scm.com/docs/githooks">hook</a> for linting cookboks.</p>
+
+<p>Git runs the pre-commit hook script before each commit. This allows you to run code quality checks so only clean code is committed to your repo.</p>
+
+<p>It&#8217;s important to note that git hooks aren&#8217;t copied down when you clone a git repo. Each developer will need to create his or her own pre-commit hook script in the .git/hooks/ directory of the repo. If you wanted to get fancy, you could keep git hook scripts in a &#8220;utility&#8221; repo and have a rake script to copy them to the right location.</p>
+
+<p>The pre-commit script below does four things:</p>
+
+<ol>
+<li>Runs a built-in Git whitespace check for trailing whitespace, mixed tabs and spaces, etc.</li>
+<li>Runs <a href="http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test">&#8216;knife cookbook test&#8217;</a> to check Ruby and ERB template syntax.</li>
+<li>Runs <a href="https://github.com/turboladen/tailor">&#8216;tailor&#8217;</a> to check your code against Ruby style conventions.</li>
+<li>Runs <a href="http://acrmp.github.com/foodcritic/">&#8216;foodcritic&#8217;</a>, the de facto Chef cookbook linting tool.</li>
+</ol>
+
+
+<!--more-->
+
+
+
+
+<figure class='code'><figcaption><span> (pre-commit)</span> <a href='/downloads/code/chef/pre-commit'>download</a></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># check for whitespace errors</span>
+</span><span class='line'><span class="n">git_ws_check</span> <span class="o">=</span> <span class="sb">`git diff-index --check --cached HEAD --`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">git_ws_check</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">COOKBOOK_PATH</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">split</span> <span class="sb">`git rev-parse --show-toplevel`</span>
+</span><span class='line'><span class="no">PARENT_PATH</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="no">COOKBOOK_NAME</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">chomp</span> <span class="c1"># remove trailing newline</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running knife cookbook test...&#39;</span>
+</span><span class='line'><span class="n">knife_output</span> <span class="o">=</span> <span class="sb">`knife cookbook test </span><span class="si">#{</span> <span class="no">COOKBOOK_NAME</span> <span class="si">}</span><span class="sb"> -o </span><span class="si">#{</span> <span class="no">PARENT_PATH</span> <span class="si">}</span><span class="sb"> -c ~/chef/wit/chef-repo/.chef/knife.rb`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">knife_output</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running tailor...&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Get the file names of (A)dded, (C)opied, (M)odified Ruby files </span>
+</span><span class='line'><span class="no">STAGED_FILES</span> <span class="o">=</span> <span class="sb">`git diff-index --name-only --diff-filter=ACM HEAD -- &#39;*.rb&#39;`</span>
+</span><span class='line'><span class="no">STAGED_FILES</span><span class="o">.</span><span class="n">lines</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">file</span><span class="o">.</span><span class="n">chomp!</span> <span class="c1"># remove carriage returns</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">file</span>
+</span><span class='line'>    <span class="n">tailor_output</span> <span class="o">=</span> <span class="sb">`tailor --max-line-length 999 </span><span class="si">#{</span> <span class="n">file</span> <span class="si">}</span><span class="sb">`</span>
+</span><span class='line'>    <span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="n">tailor_output</span>
+</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Running foodcritic...&quot;</span>
+</span><span class='line'><span class="n">fc_output</span> <span class="o">=</span> <span class="sb">`foodcritic --epic-fail any </span><span class="si">#{</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">PARENT_PATH</span><span class="p">,</span> <span class="no">COOKBOOK_NAME</span><span class="p">)</span> <span class="si">}</span><span class="sb">`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">fc_output</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>But, how do I use it?</h2>
+
+<p>Just copy the script below to file named &#8216;pre-commit&#8217;, make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.</p>
+
+<h2>Wait a minute! It&#8217;s not robust!</h2>
+
+<p>You may have noticed that the script needs a few things. It should check for the existence of various binaries (knife, foodcritic, tailor) before calling them. I&#8217;m sure you could think of many more improvents. I welcome your comments or gist forks. I just had to move on to more pressing things.</p>
+
+<p>Thanks for reading and I welcome constructive comments&#8230;</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-10T21:02:00-08:00" pubdate data-updated="true">Dec 10<span>th</span>, 2012</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.com/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/" data-via="dougireton" data-counturl="http://dougireton.github.com/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/" title="Next Post: How to include the Windows Cookbook Helper methods in your Chef recipe">How to include the Windows Cookbook Helper methods in your Chef recipe &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/get-chef-clients-by-version/">Get Chef Clients by version</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - part 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/07/creating-an-lwrp-part-2/">Creating an LWRP, part 2: The Provider</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, part 1: The Resource</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically upgrading Chef client on Vagrant Up</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("dougireton", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/dougireton" class="twitter-follow-button" data-show-count="false">Follow @dougireton</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.com/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/';
+        var disqus_url = 'http://dougireton.github.com/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
