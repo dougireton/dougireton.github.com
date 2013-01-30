@@ -4,7 +4,7 @@
   <title><![CDATA[Category: LWRP | Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/blog/categories/lwrp/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-24T22:12:25-08:00</updated>
+  <updated>2013-01-29T22:21:55-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -316,7 +316,7 @@ end
 
 <p>Here's an example resource we'll be looking at. It allows you to create Windows TCP/IP printer ports.</p>
 
-<p>``` ruby Windows Printer Port Resource
+<p>```ruby Windows Printer Port Resource
 require 'resolv'</p>
 
 <p>actions :create, :delete
@@ -350,7 +350,7 @@ attribute :snmp_enabled    , :kind_of => [ TrueClass, FalseClass ],</p>
 
 <p>Line 6 defines an <code>:ipv4_address</code> attribute. Its <code>:name_attribute</code> is true, which means that this attribute will be set to the string between <code>windows_printer_port</code> and <code>do</code>:</p>
 
-<p><code>`` ruby</code>name_attribute`
+<p><code>``ruby</code>name_attribute`
 windows_printer_port "This is the name attribute part" do
 end</p>
 

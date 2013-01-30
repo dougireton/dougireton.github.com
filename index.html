@@ -9,7 +9,7 @@
   <meta name="author" content="Doug Ireton">
 
   
-  <meta name="description" content="Ohai Chefs! At work, we&#8217;re being converted to the gospel of Etsy&#8217;s Church of Graphs. We&#8217;re sending Chef run times and other metrics &hellip;">
+  <meta name="description" content="Ohai Chefs! Last week, we looked at how to get Chef clients grouped by version. This week, we&#8217;ll look at something completely different - &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,66 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/">Make Vim&#8217;s Goto File Command Open Included Chef Recipes</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-27T21:18:00-08:00" pubdate data-updated="true">Jan 27<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Last week, we looked at how to get <a href="http://dougireton.com/blog/2013/01/19/get-chef-clients-by-version/">Chef clients grouped by version</a>. This week, we&#8217;ll look at something completely different - customizing Vim to jump to included Chef recipes via the <a href="http://vim.wikia.com/wiki/Open_file_under_cursor#Go_to_file">Goto File command</a> - <code>gf</code>.</p>
+
+<h2>TL;DR</h2>
+
+<p>Add this to your .vimrc to be able to jump to included recipes (via <code>include_recipe</code>). Caveat: you can only jump to fully-qualified recipe names, e.g. <code>my_cookbook::my_recipe</code>. Hitting <code>gf</code> on <code>include_recipe 'my_cookbook'</code>, won&#8217;t jump to <code>my_cookbook::default</code>.</p>
+
+<figure class='code'><figcaption><span>.vimrc autocmd for include_recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; Make gf work on Chef include_recipe lines</span>
+</span><span class='line'><span class="c">&quot; Add all cookbooks/*/recipe dirs to Vim&#39;s path variable</span>
+</span><span class='line'>autocmd <span class="nb">BufRead</span><span class="p">,</span><span class="nb">BufNewFile</span> *<span class="sr">/cookbooks/</span>*<span class="sr">/recipes/</span>*.rb <span class="k">setlocal</span> <span class="nb">path</span><span class="p">+=</span>recipes;<span class="sr">/cookbooks/</span>**<span class="m">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Read on to find out why this works.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -469,6 +529,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/">Make Vim&#8217;s Goto File command open included Chef recipes</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/19/get-chef-clients-by-version/">Get Chef Clients by version</a>
       </li>
     
@@ -482,10 +546,6 @@
     
       <li class="post">
         <a href="/blog/2012/12/31/creating-an-lwrp/">Creating an LWRP, part 1: The Resource</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/">Automatically upgrading Chef client on Vagrant Up</a>
       </li>
     
   </ul>

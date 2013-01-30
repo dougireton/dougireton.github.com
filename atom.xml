@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-24T22:12:25-08:00</updated>
+  <updated>2013-01-29T22:21:55-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,73 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Make Vim's Goto File command open included Chef recipes]]></title>
+    <link href="http://dougireton.github.com/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/"/>
+    <updated>2013-01-27T21:18:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at how to get <a href="http://dougireton.com/blog/2013/01/19/get-chef-clients-by-version/">Chef clients grouped by version</a>. This week, we&#8217;ll look at something completely different - customizing Vim to jump to included Chef recipes via the <a href="http://vim.wikia.com/wiki/Open_file_under_cursor#Go_to_file">Goto File command</a> - <code>gf</code>.</p>
+
+<h2>TL;DR</h2>
+
+<p>Add this to your .vimrc to be able to jump to included recipes (via <code>include_recipe</code>). Caveat: you can only jump to fully-qualified recipe names, e.g. <code>my_cookbook::my_recipe</code>. Hitting <code>gf</code> on <code>include_recipe 'my_cookbook'</code>, won&#8217;t jump to <code>my_cookbook::default</code>.</p>
+
+<figure class='code'><figcaption><span>.vimrc autocmd for include_recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; Make gf work on Chef include_recipe lines</span>
+</span><span class='line'><span class="c">&quot; Add all cookbooks/*/recipe dirs to Vim&#39;s path variable</span>
+</span><span class='line'>autocmd <span class="nb">BufRead</span><span class="p">,</span><span class="nb">BufNewFile</span> *<span class="sr">/cookbooks/</span>*<span class="sr">/recipes/</span>*.rb <span class="k">setlocal</span> <span class="nb">path</span><span class="p">+=</span>recipes;<span class="sr">/cookbooks/</span>**<span class="m">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Read on to find out why this works.</p>
+
+<!--more-->
+
+
+<h2>Including Recipes</h2>
+
+<p>In Chef you can <a href="http://docs.opscode.com/essentials_cookbook_recipes_in_recipes.html">include one recipe in another recipe</a>. For example, in one of our &#8220;application&#8221; cookbooks our <code>default.rb</code> recipe contains about 15 <code>include_recipe</code> statements which include recipes from the cookbook as well as recipes from other cookbooks. Often, I want to open one of the included recipes from the <em>default</em> recipe.</p>
+
+<h2>Vim Paths</h2>
+
+<figure class='code'><figcaption><span>.vimrc autocmd for include_recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; Make gf work on Chef include_recipe lines</span>
+</span><span class='line'><span class="c">&quot; Add all cookbooks/*/recipe dirs to Vim&#39;s path variable</span>
+</span><span class='line'>autocmd <span class="nb">BufRead</span><span class="p">,</span><span class="nb">BufNewFile</span> *<span class="sr">/cookbooks/</span>*<span class="sr">/recipes/</span>*.rb <span class="k">setlocal</span> <span class="nb">path</span><span class="p">+=</span>recipes;<span class="sr">/cookbooks/</span>**<span class="m">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The autocmd above runs when you read in an existing file (BufRead) or create a new file (BufNewFile) in a Chef cookbook <code>recipes</code> directory. The directory path <code>*/cookbooks/*/recipes/*.rb</code> assumes you have a <code>cookbooks</code> directory which contains your cookbooks and inside each cookbook you have a <code>recipes</code> directory.</p>
+
+<p>The <code>setlocal</code> sets the path option locally for the recipe file, not globally in Vim.</p>
+
+<p>The actual <code>path</code> value deserves a bit more explanation. <code>path+=recipes;/cookbooks/**1</code> means append <code>recipes</code> to the current working directory, and also go upwards to the <code>cookbooks</code> directory and search all directories one level down from <code>cookbooks</code> and append <code>recipes</code> to those as well. So in other words it will search for the file under the cursor in the current cookbook&#8217;s <code>recipe</code> directory, and all other cookbooks&#8217; <code>recipe</code> directories as well.</p>
+
+<p>See Vim&#8217;s help on <a href="http://vimdoc.sourceforge.net/htmldoc/editing.html#file-searching">file searching</a> for more info.</p>
+
+<h2>Conclusion</h2>
+
+<p>So there you have it.</p>
+
+<ol>
+<li>Throw that line in your .vimrc file</li>
+<li>??</li>
+<li><a href="http://www.youtube.com/watch?v=tO5sxLapAts">Profit</a></li>
+</ol>
+
+
+<p>Being able to jump to included Chef recipes is a handy little trick, but there is one caveat. It doesn&#8217;t work for default recipes, e.g. <code>include_recipe "foo"</code>. The next step for this trick is to use the <code>includeexpr</code> <a href="http://vimdoc.sourceforge.net/htmldoc/options.html#'includeexpr'">option</a> to add <code>default.rb</code> to the filename.</p>
+
+<p>Next week, we&#8217;ll look at various knife search tricks for getting data from your Chef server.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Get Chef Clients by version]]></title>

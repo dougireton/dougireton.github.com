@@ -4,7 +4,7 @@
   <title><![CDATA[Category: chef, | Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/blog/categories/chef-/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-24T22:12:25-08:00</updated>
+  <updated>2013-01-29T22:21:55-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,67 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Make Vim's Goto File command open included Chef recipes]]></title>
+    <link href="http://dougireton.github.com/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/"/>
+    <updated>2013-01-27T21:18:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at how to get <a href="http://dougireton.com/blog/2013/01/19/get-chef-clients-by-version/">Chef clients grouped by version</a>. This week, we'll look at something completely different - customizing Vim to jump to included Chef recipes via the <a href="http://vim.wikia.com/wiki/Open_file_under_cursor#Go_to_file">Goto File command</a> - <code>gf</code>.</p>
+
+<h2>TL;DR</h2>
+
+<p>Add this to your .vimrc to be able to jump to included recipes (via <code>include_recipe</code>). Caveat: you can only jump to fully-qualified recipe names, e.g. <code>my_cookbook::my_recipe</code>. Hitting <code>gf</code> on <code>include_recipe 'my_cookbook'</code>, won't jump to <code>my_cookbook::default</code>.</p>
+
+<p><code>vim .vimrc autocmd for include_recipe
+" Make gf work on Chef include_recipe lines
+" Add all cookbooks/*/recipe dirs to Vim's path variable
+autocmd BufRead,BufNewFile */cookbooks/*/recipes/*.rb setlocal path+=recipes;/cookbooks/**1
+</code></p>
+
+<p>Read on to find out why this works.</p>
+
+<!--more-->
+
+
+<h2>Including Recipes</h2>
+
+<p>In Chef you can <a href="http://docs.opscode.com/essentials_cookbook_recipes_in_recipes.html">include one recipe in another recipe</a>. For example, in one of our "application" cookbooks our <code>default.rb</code> recipe contains about 15 <code>include_recipe</code> statements which include recipes from the cookbook as well as recipes from other cookbooks. Often, I want to open one of the included recipes from the <em>default</em> recipe.</p>
+
+<h2>Vim Paths</h2>
+
+<p><code>vim .vimrc autocmd for include_recipe
+" Make gf work on Chef include_recipe lines
+" Add all cookbooks/*/recipe dirs to Vim's path variable
+autocmd BufRead,BufNewFile */cookbooks/*/recipes/*.rb setlocal path+=recipes;/cookbooks/**1
+</code></p>
+
+<p>The autocmd above runs when you read in an existing file (BufRead) or create a new file (BufNewFile) in a Chef cookbook <code>recipes</code> directory. The directory path <code>*/cookbooks/*/recipes/*.rb</code> assumes you have a <code>cookbooks</code> directory which contains your cookbooks and inside each cookbook you have a <code>recipes</code> directory.</p>
+
+<p>The <code>setlocal</code> sets the path option locally for the recipe file, not globally in Vim.</p>
+
+<p>The actual <code>path</code> value deserves a bit more explanation. <code>path+=recipes;/cookbooks/**1</code> means append <code>recipes</code> to the current working directory, and also go upwards to the <code>cookbooks</code> directory and search all directories one level down from <code>cookbooks</code> and append <code>recipes</code> to those as well. So in other words it will search for the file under the cursor in the current cookbook's <code>recipe</code> directory, and all other cookbooks' <code>recipe</code> directories as well.</p>
+
+<p>See Vim's help on <a href="http://vimdoc.sourceforge.net/htmldoc/editing.html#file-searching">file searching</a> for more info.</p>
+
+<h2>Conclusion</h2>
+
+<p>So there you have it.</p>
+
+<ol>
+<li>Throw that line in your .vimrc file</li>
+<li>??</li>
+<li><a href="http://www.youtube.com/watch?v=tO5sxLapAts">Profit</a></li>
+</ol>
+
+
+<p>Being able to jump to included Chef recipes is a handy little trick, but there is one caveat. It doesn't work for default recipes, e.g. <code>include_recipe "foo"</code>. The next step for this trick is to use the <code>includeexpr</code> <a href="http://vimdoc.sourceforge.net/htmldoc/options.html#'includeexpr'">option</a> to add <code>default.rb</code> to the filename.</p>
+
+<p>Next week, we'll look at various knife search tricks for getting data from your Chef server.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Get Chef Clients by version]]></title>
@@ -554,7 +615,7 @@ end
 
 <p>Here's an example resource we'll be looking at. It allows you to create Windows TCP/IP printer ports.</p>
 
-<p>``` ruby Windows Printer Port Resource
+<p>```ruby Windows Printer Port Resource
 require 'resolv'</p>
 
 <p>actions :create, :delete
@@ -588,7 +649,7 @@ attribute :snmp_enabled    , :kind_of => [ TrueClass, FalseClass ],</p>
 
 <p>Line 6 defines an <code>:ipv4_address</code> attribute. Its <code>:name_attribute</code> is true, which means that this attribute will be set to the string between <code>windows_printer_port</code> and <code>do</code>:</p>
 
-<p><code>`` ruby</code>name_attribute`
+<p><code>``ruby</code>name_attribute`
 windows_printer_port "This is the name attribute part" do
 end</p>
 
