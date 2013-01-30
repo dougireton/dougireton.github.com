@@ -30,7 +30,7 @@ Your first step should be to determine if the resource you need already exists. 
 
 Here's an example resource we'll be looking at. It allows you to create Windows TCP/IP printer ports.
 
-``` ruby Windows Printer Port Resource
+```ruby Windows Printer Port Resource
 require 'resolv'
 
 actions :create, :delete
@@ -60,7 +60,7 @@ Lines 6 - 13 define attributes, or properties of the printer port resource we ar
 
 Line 6 defines an `:ipv4_address` attribute. Its `:name_attribute` is true, which means that this attribute will be set to the string between `windows_printer_port` and `do`:
 
-``` ruby `name_attribute`
+```ruby `name_attribute`
 windows_printer_port "This is the name attribute part" do
 end
 
