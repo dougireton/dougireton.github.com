@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>knife tricks - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.com/blog/2013/02/03/knife-tricks/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Knife Tricks</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-03T20:40:00-08:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&#8217;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon Decamp</a>.</p>
+
+<h3>Find all nodes in an environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node chef_environment:&lt;environment name&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Find all nodes which contain a role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node role<span class="o">(</span>s<span class="o">)</span>:&lt;role name&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;role:web_server&quot;</span> -a hostname
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Use &#8216;roles&#8217; plural when looking in the expanded run list.</p>
+
+<!--more-->
+
+
+<h3>Find all nodes which contain a recipe</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># looks for statsd_handler(::default)</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:statsd_handler&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># note the use of \:\: to escape the double-colon</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:windows\:\:reboot_handler&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note the use of <code>recipes</code> plural to search the expanded run list.</p>
+
+<h3>Find all non-64 bit nodes</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;(NOT kernel_machine:x86_64)&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Return selected attributes from knife search</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;name:*&quot;</span> -a chef_packages.chef.version
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This returns the <code>chef_packages.chef.version</code> attribute from all nodes in the Chef Org.</p>
+
+<h3>Add a role to all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># First, run it like this to run without saving the results back to the Chef Server</span>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot; }&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot;; n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To be on the safe side, run the command above without the <code>n.save</code> so results aren&#8217;t saved back to the Chef server. When you are sure about the command run it with <code>n.save</code> to save the results back to the Chef server.</p>
+
+<h3>Add a role to all nodes in an Environment which don&#8217;t contain the given Role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[base]&quot; unless n.run_list.include?(&quot;role[base]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove a recipe from all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list.remove(&quot;recipe[chef-client::upgrade]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove all nodes from a given role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;role:web_server&quot;) {|n| n.run_list.remove(&quot;role[web_server]&quot;); n.save}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Set a node&#8217;s run_list back to a single item</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;name:webserver01.example.com&quot;) {|n| n.run_list([&quot;role[base]&quot;])}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>So that&#8217;s it for this week. I hope you picked up some valuable knife tricks. The knife search command is versatile and combining <code>knife exec</code> with search allows you to do some amazing things with your infrstructure. Share some of your own knife tricks in the comments or over on Twitter.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-03T20:40:00-08:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef-/'>chef,</a>, <a class='category' href='/blog/categories/howto/'>howto</a>, <a class='category' href='/blog/categories/knife-/'>knife,</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.com/blog/2013/02/03/knife-tricks/" data-via="dougireton" data-counturl="http://dougireton.github.com/blog/2013/02/03/knife-tricks/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/" title="Previous Post: Make Vim's Goto File command open included Chef recipes">&laquo; Make Vim's Goto File command open included Chef recipes</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/02/03/knife-tricks/">knife tricks</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/">Make Vim's Goto File command open included Chef recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/get-chef-clients-by-version/">Get Chef Clients by version</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/13/creating-an-lwrp-part-3/">Creating an LWRP - part 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/07/creating-an-lwrp-part-2/">Creating an LWRP, part 2: The Provider</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 2,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("dougireton", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/dougireton" class="twitter-follow-button" data-show-count="false">Follow @dougireton</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.com/blog/2013/02/03/knife-tricks/';
+        var disqus_url = 'http://dougireton.github.com/blog/2013/02/03/knife-tricks/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

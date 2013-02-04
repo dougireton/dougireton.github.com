@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-01-29T22:21:55-08:00</updated>
+  <updated>2013-02-03T22:41:51-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,120 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[knife tricks]]></title>
+    <link href="http://dougireton.github.com/blog/2013/02/03/knife-tricks/"/>
+    <updated>2013-02-03T20:40:00-08:00</updated>
+    <id>http://dougireton.github.com/blog/2013/02/03/knife-tricks</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&#8217;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon Decamp</a>.</p>
+
+<h3>Find all nodes in an environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node chef_environment:&lt;environment name&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Find all nodes which contain a role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node role<span class="o">(</span>s<span class="o">)</span>:&lt;role name&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;role:web_server&quot;</span> -a hostname
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Use &#8216;roles&#8217; plural when looking in the expanded run list.</p>
+
+<!--more-->
+
+
+<h3>Find all nodes which contain a recipe</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># looks for statsd_handler(::default)</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:statsd_handler&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># note the use of \:\: to escape the double-colon</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:windows\:\:reboot_handler&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note the use of <code>recipes</code> plural to search the expanded run list.</p>
+
+<h3>Find all non-64 bit nodes</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;(NOT kernel_machine:x86_64)&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Return selected attributes from knife search</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;name:*&quot;</span> -a chef_packages.chef.version
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This returns the <code>chef_packages.chef.version</code> attribute from all nodes in the Chef Org.</p>
+
+<h3>Add a role to all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># First, run it like this to run without saving the results back to the Chef Server</span>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot; }&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot;; n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To be on the safe side, run the command above without the <code>n.save</code> so results aren&#8217;t saved back to the Chef server. When you are sure about the command run it with <code>n.save</code> to save the results back to the Chef server.</p>
+
+<h3>Add a role to all nodes in an Environment which don&#8217;t contain the given Role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[base]&quot; unless n.run_list.include?(&quot;role[base]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove a recipe from all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list.remove(&quot;recipe[chef-client::upgrade]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove all nodes from a given role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;role:web_server&quot;) {|n| n.run_list.remove(&quot;role[web_server]&quot;); n.save}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Set a node&#8217;s run_list back to a single item</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;name:webserver01.example.com&quot;) {|n| n.run_list([&quot;role[base]&quot;])}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>So that&#8217;s it for this week. I hope you picked up some valuable knife tricks. The knife search command is versatile and combining <code>knife exec</code> with search allows you to do some amazing things with your infrstructure. Share some of your own knife tricks in the comments or over on Twitter.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Make Vim's Goto File command open included Chef recipes]]></title>
