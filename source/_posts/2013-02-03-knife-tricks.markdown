@@ -7,7 +7,7 @@ categories: chef, knife, howto
 ---
 Ohai Chefs!
 
-At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we've picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; [Jon Decamp][1].
+At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we've picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; [Jon DeCamp][1].
 
 [1]: https://twitter.com/jondecamp
 
