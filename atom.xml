@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.com/atom.xml" rel="self"/>
   <link href="http://dougireton.github.com/"/>
-  <updated>2013-02-03T22:41:51-08:00</updated>
+  <updated>2013-02-04T08:03:43-08:00</updated>
   <id>http://dougireton.github.com/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -20,7 +20,7 @@
     <id>http://dougireton.github.com/blog/2013/02/03/knife-tricks</id>
     <content type="html"><![CDATA[<p>Ohai Chefs!</p>
 
-<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&#8217;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon Decamp</a>.</p>
+<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&#8217;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon DeCamp</a>.</p>
 
 <h3>Find all nodes in an environment</h3>
 
