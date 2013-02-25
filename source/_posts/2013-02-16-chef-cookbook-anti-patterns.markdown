@@ -72,7 +72,7 @@ description "Role for web servers"
 
 run_list(
   "role[base]",
-  "reciep{web_server]"
+  "recipe{web_server]"
 )
 ```
 
