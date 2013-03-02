@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Layout your .vimrc like a Boss"
+title: "Lay out your .vimrc like a Boss"
 date: 2013-02-23 15:21
 comments: true
 categories: vim, howto
