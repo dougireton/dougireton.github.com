@@ -35,8 +35,6 @@ Here it is, just don't ask me to explain it.
 
 ```vim
 vno  <silent> <Leader>fR   c<C-O>:set ri lz<cr><C-R>"<esc>:norm! dd`<<cr>:set ri! lz!<cr>
-
-vno  <silent> <Leader>fR   c<C-O>:set ri lz<cr><C-R>"<esc>:norm! dd`<<cr>:set ri! lz!<cr>:'<,'>s/\\/\//<cr>
 ```
 
 ## And, here are the results\*
