@@ -63,7 +63,7 @@ execute "Deploy the app" do
   # ...
 end
 
-ruby_block "End of MobileSecure deployment" do
+ruby_block "End of app deployment" do
   block do
     # calculate elapsed time for deployment and send to StatsD
     deploy_end = Time.now
@@ -71,10 +71,10 @@ ruby_block "End of MobileSecure deployment" do
 
     # Replace "." with underscores in node name so Graphite doesn't create
     # a bucket for each part of the FQDN
-    graphite_node_name = node.name.gsub('.', '_')
+    node_name_underscores = node.name.gsub('.', '_')
     
     # Use `statsd-ruby` timing method to send data to StatsD
-    statsd.timing "my_app.#{node.chef_environment}.#{graphite_node_name}.deploy_time", elapsed_time
+    statsd.timing "my_app.#{node.chef_environment}.#{node_name_underscores}.deploy_time", elapsed_time
     Chef::Log.info "App deployment took #{elapsed_time} seconds."
   end
 end
