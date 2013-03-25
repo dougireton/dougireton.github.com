@@ -1,0 +1,78 @@
+---
+layout: post
+title: "ruby -p -i -e"
+date: 2013-03-24 21:28
+comments: true
+categories: ruby
+---
+This week we'll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables.
+
+## [The Tragic Backstory][1]
+
+At work, we have to go through a proxy server to get to the Internet. To use git, curl, etc. I have to set my `http(s)_proxy` environment varables. At home I have to unset them since I don't have a proxy at home. Editing my .zshenv twice a day got pretty tedious so I decided to script it.
+
+At first I tried using sed but after trying for an hour to understand how to write a simple sed script, I opted for Ruby. As it turns out, Ruby has very good support for line-editing and substitution.
+
+[1]: http://www.youtube.com/watch?v=bKK-KLDlm20
+<!--more-->
+
+## The Problem
+
+Here are the first two lines of my `.zshenv` file with the relevant proxy variables:
+
+```bash
+export http_proxy="http://proxy.example.com:80"
+export https_proxy="http://proxy.example.com:80"
+
+# --- <snip> ---
+```
+
+My script needed to be able to comment out only those two lines, like this:
+
+```bash
+# export http_proxy="http://proxy.example.com:80"
+# export https_proxy="http://proxy.example.com:80"
+
+# --- <snip> ---
+```
+
+## The solution - [Delicious PIE][2]
+
+Ruby has many command line options (type `ruby -h` to see them), but three are particularly relevant to solving this problem. The first one is `-i`, which means edit in place instead of making a copy. The next one is `-p`, which makes Ruby "print", or iterate over each line of your input file so your script can act on each line. Basically it saves you the trouble of reading in the file and creating a line interator. Pretty handy. Finally, the `-e` allows you to pass a one-line Ruby script to `ruby`. 
+
+All together, these options allow you to read in an input file, interate over each line (`-p`), edit in place (`-i`), and execute a one-line script (`-e`) against each line.  
+
+```bash
+# Comment out lines beginning with "export http(s)_proxy"
+# This will set no proxy
+ruby -i -pe "gsub /^export https{0,1}_proxy=/, '# \0'" ~/.zshenv
+
+source ~/.zshenv
+```
+
+Above is the script to comment out `http(s)\_proxy` lines for when I'm not at work. The Ruby one-liner is a gsub which finds lines beginning with `http_proxy` or `https_proxy` and prepends a comment char (#) before the entire match, represented with `\0`.
+
+```bash
+# Uncomment lines beginning with "export http(s)_proxy"
+# This will set a proxy
+ruby -i -pe "gsub /^# (export https{0,1}_proxy=)/, '\1'" ~/.zshenv
+
+source ~/.zshenv
+```
+
+This is the script to uncomment the `http(s)_proxy` lines for when I'm working for the man. It's quite similar to the script above but replaces the `http(s)_proxy` lines with the `\1` reference which matches the part of the match in parenthesis.
+
+By making this script executable, and putting it in my ~/bin directory, I can just run `proxy.sh` to set my proxy, and `noproxy.sh` to unset my proxy. The script automatically re-source my `.zshenv` so I don't have to close and reopen my terminal.
+
+## The 80/20 Rule
+All in all I'm pretty happy with my solution. It's not perfect. I'd really like to automatically run when I switch Mac network Locations, but for now it's making my life easier with only one line of Ruby. It gets me at least 80% of the way there and I'm happy to stop bike shedding it for now.
+
+[2]: http://www.crumblycookie.net/2012/06/16/strawberry-rhubarb-pie/
+
+## Wrap Up
+
+So we learned how to write a simple shell script to gsub lines in a text file using a Ruby one-liner. The Ruby command-line options are pretty handy, check them out with `ruby -h`. For even more Ruby one-liners, check out ["Text processing one-liners: Ruby vs. Awk"][3], and [Ruby one-liners][4]
+
+[3]: http://benoithamelin.tumblr.com/post/10945200630/text-processing-1liners-ruby-vs-awk
+[4]: http://benoithamelin.tumblr.com/ruby1line/
+
