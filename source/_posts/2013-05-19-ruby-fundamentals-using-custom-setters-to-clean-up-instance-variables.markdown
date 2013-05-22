@@ -20,11 +20,12 @@ class StashNotifier
 
   def initialize(args)
     # other instance vars omitted
-    self.job_status  = args[:job_status]
+    self.job_status  = args[:job_status] # <= call the custom setter
     @job_key         = args[:job_key]
     @job_url         = args[:job_url]
   end
 
+  # custom setter method
   def job_status=(new_job_status)
     new_job_status = new_job_status.strip.upcase
 
@@ -69,11 +70,12 @@ Class StashNotifier
 
   def initialize(args)
     # other instance vars omitted
-    self.job_status  = args[:job_status]
+    self.job_status  = args[:job_status] # <= call the custom setter
     @job_key         = args[:job_key]
     @job_url         = args[:job_url]
   end
 
+  # custom setter method
   def job_status=(new_job_status)
     # define custom logic here
     # see code sample above for full example
@@ -81,14 +83,18 @@ Class StashNotifier
 end
 ```
 
-We first define an `attr_reader` to have Ruby create the getter for us, while still letting us define a custom setter.
+We first define an `attr_reader` to have Ruby create the getter for us. We'll define the setter separately so we can add some of our own logic.
 
-Instead of setting the `job_status` instance variable in our class initializer, we call the custom setter, `job_status=`. By defining it as a method with a trailing `=`, we make it a setter. We prepend it with `self.` to specify that it's a method and not a local variable. This setter method will be called during initialization, *and* anytime we do this:
+Instead of setting the `job_status` instance variable in our class initializer, we call the custom setter, `job_status=`. By defining it as a method with a trailing `=`, we make it a setter. We prepend it with `self.` to specify that it's a method and not a local variable.
+
+This setter method will be called during initialization, *and* anytime we do this:
 
 ```ruby
   notifier = StashNotifer.new(args)
   notifier.job_status = 'failed'
 ```
+
+By calling the custom setter in the class initiaize method, we make sure that our custom setter is always called, both at initialization time and whenever we set the `job_status` "property" on our class instance, making our solution DRY.
 
 ## Summary
 I hope you've found this useful. It took quite a bit of Googling for me to find out this little tidbit. Here are a couple of links I found helpful during my research:
