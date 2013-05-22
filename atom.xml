@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.io/atom.xml" rel="self"/>
   <link href="http://dougireton.github.io/"/>
-  <updated>2013-05-21T22:16:33-07:00</updated>
+  <updated>2013-05-21T22:30:43-07:00</updated>
   <id>http://dougireton.github.io/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -49,6 +49,7 @@ for the full explanation.</p>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
+<span class='line-number'>25</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">StashNotifier</span>
 </span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
 </span><span class='line'>
@@ -56,11 +57,12 @@ for the full explanation.</p>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </span><span class='line'>    <span class="c1"># other instance vars omitted</span>
-</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span> <span class="c1"># &lt;= call the custom setter</span>
 </span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
 </span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
+</span><span class='line'>  <span class="c1"># custom setter method</span>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
 </span><span class='line'>    <span class="n">new_job_status</span> <span class="o">=</span> <span class="n">new_job_status</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">upcase</span>
 </span><span class='line'>
@@ -121,16 +123,18 @@ for the full explanation.</p>
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
 <span class='line-number'>15</span>
+<span class='line-number'>16</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Class</span> <span class="no">StashNotifier</span>
 </span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </span><span class='line'>    <span class="c1"># other instance vars omitted</span>
-</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span> <span class="c1"># &lt;= call the custom setter</span>
 </span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
 </span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
+</span><span class='line'>  <span class="c1"># custom setter method</span>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
 </span><span class='line'>    <span class="c1"># define custom logic here</span>
 </span><span class='line'>    <span class="c1"># see code sample above for full example</span>
@@ -139,9 +143,11 @@ for the full explanation.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us, while still letting us define a custom setter.</p>
+<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us. We&rsquo;ll define the setter separately so we can add some of our own logic.</p>
 
-<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable. This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
+<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable.</p>
+
+<p>This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -149,6 +155,8 @@ for the full explanation.</p>
 </span><span class='line'>  <span class="n">notifier</span><span class="o">.</span><span class="n">job_status</span> <span class="o">=</span> <span class="s1">&#39;failed&#39;</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+<p>By calling the custom setter in the class initiaize method, we make sure that our custom setter is always called, both at initialization time and whenever we set the <code>job_status</code> &ldquo;property&rdquo; on our class instance, making our solution DRY.</p>
 
 <h2>Summary</h2>
 

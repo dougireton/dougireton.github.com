@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ruby | Automate All the Things!]]></title>
   <link href="http://dougireton.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://dougireton.github.io/"/>
-  <updated>2013-05-21T22:16:33-07:00</updated>
+  <updated>2013-05-21T22:30:43-07:00</updated>
   <id>http://dougireton.github.io/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -34,14 +34,15 @@ class StashNotifier
 <p>  def initialize(args)</p>
 
 <pre><code># other instance vars omitted
-self.job_status  = args[:job_status]
+self.job_status  = args[:job_status] # &lt;= call the custom setter
 @job_key         = args[:job_key]
 @job_url         = args[:job_url]
 </code></pre>
 
 <p>  end</p>
 
-<p>  def job_status=(new_job_status)</p>
+<p>  # custom setter method
+  def job_status=(new_job_status)</p>
 
 <pre><code>new_job_status = new_job_status.strip.upcase
 
@@ -98,14 +99,15 @@ Class StashNotifier
 <p>  def initialize(args)</p>
 
 <pre><code># other instance vars omitted
-self.job_status  = args[:job_status]
+self.job_status  = args[:job_status] # &lt;= call the custom setter
 @job_key         = args[:job_key]
 @job_url         = args[:job_url]
 </code></pre>
 
 <p>  end</p>
 
-<p>  def job_status=(new_job_status)</p>
+<p>  # custom setter method
+  def job_status=(new_job_status)</p>
 
 <pre><code># define custom logic here
 # see code sample above for full example
@@ -115,14 +117,18 @@ self.job_status  = args[:job_status]
 end
 ```</p>
 
-<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us, while still letting us define a custom setter.</p>
+<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us. We&rsquo;ll define the setter separately so we can add some of our own logic.</p>
 
-<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable. This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
+<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable.</p>
+
+<p>This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
 
 <p><code>ruby
   notifier = StashNotifer.new(args)
   notifier.job_status = 'failed'
 </code></p>
+
+<p>By calling the custom setter in the class initiaize method, we make sure that our custom setter is always called, both at initialization time and whenever we set the <code>job_status</code> &ldquo;property&rdquo; on our class instance, making our solution DRY.</p>
 
 <h2>Summary</h2>
 
