@@ -1,1 +1,744 @@
-My Octopress Page is coming soon &hellip;
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Fellow Rubyists! This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to Clean Up Instance Variables</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-19T21:56:00-07:00" pubdate data-updated="true">May 19<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Fellow Rubyists!</p>
+
+<p>This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic before setting instance variables. I just
+had to do this last week for a gem I&rsquo;m writing. Here&rsquo;s a quick snippet. Read on
+for the full explanation.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">StashNotifier</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">VALID_JOB_STATUSES</span> <span class="o">=</span> <span class="sx">%w{ INPROGRESS SUCCESSFUL FAILED }</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">new_job_status</span> <span class="o">=</span> <span class="n">new_job_status</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">upcase</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="no">VALID_JOB_STATUSES</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@job_status</span> <span class="o">=</span> <span class="n">new_job_status</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="k">raise</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">&quot;&#39;</span><span class="si">#{</span><span class="n">new_job_status</span><span class="si">}</span><span class="s2">&#39; is not a valid Stash Build</span>
+</span><span class='line'><span class="s2">Status! Valid job statuses are </span><span class="si">#{</span><span class="no">VALID_JOB_STATUSES</span><span class="si">}</span><span class="s2">.&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="c1"># rest of class omitted</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to Present at a Tech Conference</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-12T21:33:00-07:00" pubdate data-updated="true">May 12<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>This week I&rsquo;ll share my tips and tricks for presenting at a tech conference,
+based on my vast experience of one conference. So, take it with several grains
+of salt.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/04/14/will-you-join-us/">Will You Join Us?</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-14T21:00:00-07:00" pubdate data-updated="true">Apr 14<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/04/14/will-you-join-us/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>This week, the week before Chef Conf, I&rsquo;d like to talk a bit about our team and our culture, and invite you to join us.</p>
+
+<h2>tl;dr</h2>
+
+<p>Here&rsquo;s our job posting for a spot on our <a href="https://nordstrom.taleo.net/careersection/2/jobdetail.ftl?job=292465">Infrastructure Engineering team</a>, which I hope you&rsquo;ll read, but I also hope you&rsquo;ll read on to get a personal feel for our team and the huge cultural shift happening right now at Nordstrom.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/04/14/will-you-join-us/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites From the Treasure Chest</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-06T07:51:00-07:00" pubdate data-updated="true">Apr 6<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Work has been busy and I&rsquo;ve been working on my <a href="http://chefconf.opscode.com/">Chef Conf</a> presentation in my &ldquo;free&rdquo; time, so this week I&rsquo;m rounding up some links I think you&rsquo;ll like.</p>
+
+<ol>
+<li><p><a href="http://jtimberman.housepub.org/blog/2013/02/16/last-check-in-time-for-nodes/">Last check-in time for nodes</a> by Josh Timberman. Nice short post with great explanations.</p></li>
+<li><p><a href="http://erik.hollensbe.org/2013/03/16/the-chef-resource-run-queue/">How the Chef client builds the Resource Collection queue</a> by Eric Hollensbe. I have a much better understanding of how a Chef run actually works after reading this.</p></li>
+<li><p>Good <a href="https://speakerdeck.com/nathenharvey/testing-your-automation">overview of Chef testing</a> by Nathen Harvey.</p></li>
+<li><p>Also see Joshua Timberman&rsquo;s <a href="http://jtimberman.housepub.org/blog/2013/03/19/anatomy-of-a-test-kitchen-1-dot-0-cookbook-part-1/">Anatomy of a Test Kitchen 1.0 Cookbook</a> for more testing goodness.</p></li>
+</ol>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef Wanted. Apply Within</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-31T19:54:00-07:00" pubdate data-updated="true">Mar 31<span>st</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/31/chef-wanted-apply-within/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>This week, we&rsquo;ll take a look at <a href="http://tickets.opscode.com/browse/CHEF-3571"><code>chef-apply</code></a>, a command-line tool, new to Chef 11, which assists with rapid development and troubleshooting by letting you run a single recipe at a time.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/24/ruby-p-i-e/">Ruby -p -i -e</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-24T21:28:00-07:00" pubdate data-updated="true">Mar 24<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/24/ruby-p-i-e/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This week we&rsquo;ll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables.</p>
+
+<h2><a href="http://www.youtube.com/watch?v=bKK-KLDlm20">The Tragic Backstory</a></h2>
+
+<p>At work, we have to go through a proxy server to get to the Internet. To use git, curl, etc. I have to set my <code>http(s)_proxy</code> environment varables. At home I have to unset them since I don&rsquo;t have a proxy at home. Editing my .zshenv twice a day got pretty tedious so I decided to script it.</p>
+
+<p>At first I tried using sed but after trying for an hour to understand how to write a simple sed script, I opted for Ruby. As it turns out, Ruby has very good support for line-editing and substitution.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/03/24/ruby-p-i-e/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/17/a-knife-dot-rb-for-our-time/">A knife.rb for Our Time</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-17T20:44:00-07:00" pubdate data-updated="true">Mar 17<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/17/a-knife-dot-rb-for-our-time/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>The basic knife.rb you get from the Chef server works, but it&rsquo;s not suitable to check into version control or share with your team. It has the name of your .pem file hardcoded into it and isn&rsquo;t flexible enough for team use. This week we&rsquo;ll look at a generic, flexible <code>knife.rb</code> you can keep in your <code>chef-repo</code> and share with your team.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/03/17/a-knife-dot-rb-for-our-time/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/07/flip-your-unicorn/">Flip Your Unicorn!</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T20:47:00-08:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/07/flip-your-unicorn/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Let&rsquo;s say you had a unicorn in your code. Maybe something like this:</p>
+
+<pre>
+                                           ________
+                                        .##@@&&&@@##.
+     \                               ,##@&::%&&%%::&@##.
+     ^\^                            #@&:%%000000000%%:&@#
+     /.(((                        #@&:%00'         '00%:&@#
+    (,/"(((__,--.                #@&:%0'             '0%:&@#
+        \  ) _( /{              #@&:%0                 0%:&@#
+        !|| " :||              #@&:%0                   0%:&@#
+        !||   :||              #@&:%0                   0%:&@#
+        '''   '''              "" ' "                   " ' ""
+</pre>
+
+
+<h2>But it&rsquo;s so wrong!</h2>
+
+<p>Clearly, something is wrong with the unicorn. It&rsquo;s not facing the rainbow. This week, we&rsquo;ll learn how to flip the unicorn (or any other text) with an awesome Vim <a href="http://www.drchip.org/astronaut/vim/index.html#Maps">Visual mode mapping</a> courtesy of the inimitable <a href="http://www.drchip.org/astronaut/vim/index.html">Dr. Chip</a></p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/03/07/flip-your-unicorn/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe/">Send Application Deploy Times to StatsD in a Chef Recipe</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-02T14:48:00-08:00" pubdate data-updated="true">Mar 2<span>nd</span>, 2013</time>
+        
+         | <a href="/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>This week, I&rsquo;ll show you how to time application deploys (or anything else) inside a Chef recipe and send metrics to <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">StatsD</a>.</p>
+
+<p>At work, we&rsquo;re working to integrate metrics into more and more aspects of our development pipeline. We are already sending Chef run data to Graphite and <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Chef client version metrics</a> to StatsD/Graphite. This past week, I worked on timing our application deploys via the <a href="https://github.com/reinh/statsd">Statsd-Ruby</a> library inside a Chef recipe. Read on to see how easy it is.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/">Lay Out Your .vimrc Like a Boss</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-23T15:21:00-08:00" pubdate data-updated="true">Feb 23<span>rd</span>, 2013</time>
+        
+         | <a href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&rsquo;ve been using <a href="http://www.vim.org/">Vim</a> for a few years now starting with the excellent <a href="https://github.com/carlhuda/janus">Janus</a> distribution of Vim settings and plugins. As excellent as Janus is though, I really wanted to know each and every setting and plugin for myself. I didn&rsquo;t want any settings I didn&rsquo;t understand.</p>
+
+<p>About eight months ago I decided to get serious. I stripped down my .vimrc to about 20 settings I understood and could start using. I put my .vimrc and plugins in a <a href="https://github.com/dougireton/vimfiles">Git repo</a>. I slowly added settings one by one as I learned more about Vim.</p>
+
+<p>If you want to take a similar path, what follows is my recommended way of organizing your .vimrc to keep things organized.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

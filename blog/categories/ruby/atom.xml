@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ruby | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/blog/categories/ruby/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby Fundamentals: Using Custom Setters to clean up Instance Variables]]></title>
+    <link href="http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/"/>
+    <updated>2013-05-19T21:56:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables</id>
+    <content type="html"><![CDATA[<p>Ohai Fellow Rubyists!</p>
+
+<p>This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic before setting instance variables. I just
+had to do this last week for a gem I&rsquo;m writing. Here&rsquo;s a quick snippet. Read on
+for the full explanation.</p>
+
+<p>```ruby
+class StashNotifier
+  attr_reader :job_status</p>
+
+<p>  VALID_JOB_STATUSES = %w{ INPROGRESS SUCCESSFUL FAILED }</p>
+
+<p>  def initialize(args)</p>
+
+<pre><code># other instance vars omitted
+self.job_status  = args[:job_status]
+@job_key         = args[:job_key]
+@job_url         = args[:job_url]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def job_status=(new_job_status)</p>
+
+<pre><code>new_job_status = new_job_status.strip.upcase
+
+if VALID_JOB_STATUSES.include?(new_job_status)
+  @job_status = new_job_status
+else
+  raise ArgumentError, "'#{new_job_status}' is not a valid Stash Build
+</code></pre>
+
+<p>Status! Valid job statuses are #{VALID_JOB_STATUSES}."</p>
+
+<pre><code>end
+</code></pre>
+
+<p>  end</p>
+
+<h1>rest of class omitted</h1>
+
+<p>end</p>
+
+<p>```</p>
+
+<!-- more -->
+
+
+<h2>Background</h2>
+
+<p>Recently, I&rsquo;ve been working on a gem to send Jenkins build status to our <a href="http://www.atlassian.com/software/stash/overview">Stash git server</a> as part of our CD pipeline.</p>
+
+<p>This gem, &lsquo;stash_notifier&rsquo;, takes <code>job_status</code> as an argument in its class initializer. At first I just set the <code>@job_status</code> instance variable directly like this:</p>
+
+<p>```ruby
+  def initialize(args)</p>
+
+<pre><code># other instance vars omitted
+@job_status = args[:job_status]
+@job_key    = args[:job_key]
+@job_url    = args[:job_url]
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>But then I realized I really should <code>upcase</code> the <code>job_status</code> per the <a href="https://developer.atlassian.com/stash/docs/latest/how-tos/updating-build-status-for-commits.html#Updating_build_results">Atlassian SDK docs</a>. Plus I wanted to check the <code>job_status</code> parameter the user passed into the <code>StashNotifier.new</code> method to make sure it was valid. To solve this I wrote a custom setter.</p>
+
+<h2>Custom Setters</h2>
+
+<p>Ruby includes some nice helper methods, <code>attr_reader</code>, <code>attr_writer</code>, and <code>attr_accessor</code> to create setters and getters for you. These just set or return the instance variables and don&rsquo;t allow for any customization. If you want to do some validation or modify the passed-in parameters, define a custom setter like this:</p>
+
+<p>```ruby
+Class StashNotifier
+  attr_reader :job_status</p>
+
+<p>  def initialize(args)</p>
+
+<pre><code># other instance vars omitted
+self.job_status  = args[:job_status]
+@job_key         = args[:job_key]
+@job_url         = args[:job_url]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def job_status=(new_job_status)</p>
+
+<pre><code># define custom logic here
+# see code sample above for full example
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us, while still letting us define a custom setter.</p>
+
+<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable. This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
+
+<p><code>ruby
+  notifier = StashNotifer.new(args)
+  notifier.job_status = 'failed'
+</code></p>
+
+<h2>Summary</h2>
+
+<p>I hope you&rsquo;ve found this useful. It took quite a bit of Googling for me to find out this little tidbit. Here are a couple of links I found helpful during my research:</p>
+
+<ol>
+<li><a href="http://ruby.about.com/od/oo/ss/Using-Attributes.htm">http://ruby.about.com/od/oo/ss/Using-Attributes.htm</a></li>
+<li><a href="http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable">http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ruby -p -i -e]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/"/>
+    <updated>2013-03-24T21:28:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e</id>
+    <content type="html"><![CDATA[<p>This week we&rsquo;ll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables.</p>
+
+<h2><a href="http://www.youtube.com/watch?v=bKK-KLDlm20">The Tragic Backstory</a></h2>
+
+<p>At work, we have to go through a proxy server to get to the Internet. To use git, curl, etc. I have to set my <code>http(s)_proxy</code> environment varables. At home I have to unset them since I don&rsquo;t have a proxy at home. Editing my .zshenv twice a day got pretty tedious so I decided to script it.</p>
+
+<p>At first I tried using sed but after trying for an hour to understand how to write a simple sed script, I opted for Ruby. As it turns out, Ruby has very good support for line-editing and substitution.</p>
+
+<!--more-->
+
+
+<h2>The Problem</h2>
+
+<p>Here are the first two lines of my <code>.zshenv</code> file with the relevant proxy variables:</p>
+
+<p>```bash .zshenv
+export http_proxy=&ldquo;<a href="http://proxy.example.com:80">http://proxy.example.com:80</a>&rdquo;
+export https_proxy=&ldquo;<a href="http://proxy.example.com:80">http://proxy.example.com:80</a>&rdquo;</p>
+
+<h1>&mdash;&ndash; <snip> &mdash;&ndash;</h1>
+
+<p>```</p>
+
+<p>My script needed to be able to comment out only those two lines, like this:</p>
+
+<p>```bash .zshenv with proxy lines commented</p>
+
+<h1>export http_proxy=&ldquo;<a href="http://proxy.example.com:80">http://proxy.example.com:80</a>&rdquo;</h1>
+
+<h1>export https_proxy=&ldquo;<a href="http://proxy.example.com:80">http://proxy.example.com:80</a>&rdquo;</h1>
+
+<h1>&mdash;&ndash; <snip> &mdash;&ndash;</h1>
+
+<p>```</p>
+
+<h2>The solution &ndash; <a href="http://www.crumblycookie.net/2012/06/16/strawberry-rhubarb-pie/">Delicious PIE</a></h2>
+
+<p>Ruby has many command line options (type <code>ruby -h</code> to see them), but three are particularly relevant to solving this problem. The first one is <code>-i</code>, which means edit in place instead of making a copy. The next one is <code>-p</code>, which makes Ruby &ldquo;print&rdquo;, or iterate over each line of your input file so your script can act on each line. Basically it saves you the trouble of reading in the file and creating a line interator. Pretty handy. Finally, the <code>-e</code> allows you to pass a one-line Ruby script to <code>ruby</code>.</p>
+
+<p>All together, these options allow you to read in an input file, interate over each line (<code>-p</code>), edit in place (<code>-i</code>), and execute a one-line script (<code>-e</code>) against each line.</p>
+
+<p>```bash noproxy.sh script</p>
+
+<h1>Comment out lines beginning with &ldquo;export http(s)_proxy&rdquo;</h1>
+
+<h1>This will set no proxy</h1>
+
+<p>ruby -i -pe &ldquo;gsub /^export https{0,1}_proxy=/, &lsquo;# \0&rsquo;&rdquo; ~/.zshenv</p>
+
+<p>source ~/.zshenv
+```</p>
+
+<p>Above is the script to comment out <code>http(s)_proxy</code> lines for when I&rsquo;m not at work. The Ruby one-liner is a gsub which finds lines beginning with <code>http_proxy</code> or <code>https_proxy</code> and prepends a comment char (#) before the entire match, represented with <code>\0</code>.</p>
+
+<p>```bash proxy.sh script</p>
+
+<h1>Uncomment lines beginning with &ldquo;export http(s)_proxy&rdquo;</h1>
+
+<h1>This will set a proxy</h1>
+
+<p>ruby -i -pe &ldquo;gsub /^# (export https{0,1}_proxy=)/, &lsquo;\1&rsquo;&rdquo; ~/.zshenv</p>
+
+<p>source ~/.zshenv
+```</p>
+
+<p>This is the script to uncomment the <code>http(s)_proxy</code> lines for when I&rsquo;m working for the man. It&rsquo;s quite similar to the script above but replaces the <code>http(s)_proxy</code> lines with the <code>\1</code> reference which matches the part of the match in parenthesis.</p>
+
+<p>By making this script executable, and putting it in my <code>~/bin</code> directory, I can just run <code>proxy.sh</code> to set my proxy, and <code>noproxy.sh</code> to unset my proxy. The script automatically re-sources my <code>.zshenv</code> so I don&rsquo;t have to close and reopen my terminal.</p>
+
+<h2>The 80/20 Rule</h2>
+
+<p>All in all I&rsquo;m pretty happy with my solution. It&rsquo;s not perfect. I&rsquo;d really like to automatically run when I switch Mac network Locations, but for now it&rsquo;s making my life easier with only one line of Ruby. It gets me at least 80% of the way there and I&rsquo;m happy to stop bike shedding it for now.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So, with the help of Ruby&rsquo;s command-line options, we learned how to write a simple shell script to gsub lines in a text file using a Ruby one-liner. Ruby&rsquo;s command-line options are pretty handy, check them out with <code>ruby -h</code>.</p>
+
+<p>For even more Ruby one-liners, check out <a href="http://benoithamelin.tumblr.com/post/10945200630/text-processing-1liners-ruby-vs-awk">&ldquo;Text processing one-liners: Ruby vs. Awk&rdquo;</a>, and <a href="http://benoithamelin.tumblr.com/ruby1line/">&ldquo;Ruby one-liners&rdquo;</a></p>
+]]></content>
+  </entry>
+  
+</feed>

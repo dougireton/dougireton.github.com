@@ -1,0 +1,2319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby Fundamentals: Using Custom Setters to clean up Instance Variables]]></title>
+    <link href="http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/"/>
+    <updated>2013-05-19T21:56:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables</id>
+    <content type="html"><![CDATA[<p>Ohai Fellow Rubyists!</p>
+
+<p>This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic before setting instance variables. I just
+had to do this last week for a gem I&rsquo;m writing. Here&rsquo;s a quick snippet. Read on
+for the full explanation.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">StashNotifier</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">VALID_JOB_STATUSES</span> <span class="o">=</span> <span class="sx">%w{ INPROGRESS SUCCESSFUL FAILED }</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">new_job_status</span> <span class="o">=</span> <span class="n">new_job_status</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">upcase</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="no">VALID_JOB_STATUSES</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@job_status</span> <span class="o">=</span> <span class="n">new_job_status</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="k">raise</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">&quot;&#39;</span><span class="si">#{</span><span class="n">new_job_status</span><span class="si">}</span><span class="s2">&#39; is not a valid Stash Build</span>
+</span><span class='line'><span class="s2">Status! Valid job statuses are </span><span class="si">#{</span><span class="no">VALID_JOB_STATUSES</span><span class="si">}</span><span class="s2">.&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="c1"># rest of class omitted</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<!-- more -->
+
+
+<h2>Background</h2>
+
+<p>Recently, I&rsquo;ve been working on a gem to send Jenkins build status to our <a href="http://www.atlassian.com/software/stash/overview">Stash git server</a> as part of our CD pipeline.</p>
+
+<p>This gem, &lsquo;stash_notifier&rsquo;, takes <code>job_status</code> as an argument in its class initializer. At first I just set the <code>@job_status</code> instance variable directly like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="vi">@job_status</span> <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>    <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>    <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But then I realized I really should <code>upcase</code> the <code>job_status</code> per the <a href="https://developer.atlassian.com/stash/docs/latest/how-tos/updating-build-status-for-commits.html#Updating_build_results">Atlassian SDK docs</a>. Plus I wanted to check the <code>job_status</code> parameter the user passed into the <code>StashNotifier.new</code> method to make sure it was valid. To solve this I wrote a custom setter.</p>
+
+<h2>Custom Setters</h2>
+
+<p>Ruby includes some nice helper methods, <code>attr_reader</code>, <code>attr_writer</code>, and <code>attr_accessor</code> to create setters and getters for you. These just set or return the instance variables and don&rsquo;t allow for any customization. If you want to do some validation or modify the passed-in parameters, define a custom setter like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Class</span> <span class="no">StashNotifier</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># define custom logic here</span>
+</span><span class='line'>    <span class="c1"># see code sample above for full example</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us, while still letting us define a custom setter.</p>
+
+<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable. This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">notifier</span> <span class="o">=</span> <span class="no">StashNotifer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">notifier</span><span class="o">.</span><span class="n">job_status</span> <span class="o">=</span> <span class="s1">&#39;failed&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Summary</h2>
+
+<p>I hope you&rsquo;ve found this useful. It took quite a bit of Googling for me to find out this little tidbit. Here are a couple of links I found helpful during my research:</p>
+
+<ol>
+<li><a href="http://ruby.about.com/od/oo/ss/Using-Attributes.htm">http://ruby.about.com/od/oo/ss/Using-Attributes.htm</a></li>
+<li><a href="http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable">http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to present at a tech conference]]></title>
+    <link href="http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/"/>
+    <updated>2013-05-12T21:33:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>This week I&rsquo;ll share my tips and tricks for presenting at a tech conference,
+based on my vast experience of one conference. So, take it with several grains
+of salt.</p>
+
+<!-- more -->
+
+
+<h2>Chef Conf 2013</h2>
+
+<p>I had the opportunity to speak at Chef Conf 2013 on April 26th on <a href="http://youtu.be/APBSff1_oVY">Tips and
+Tricks for Automating Windows with Chef</a>. I actually proposed a completely
+different talk back in January which when it just wasn&rsquo;t coming together in
+early April, I had to abandon.</p>
+
+<h2>The Proposal</h2>
+
+<p>I don&rsquo;t have a lot of advice here, except to share my mistake. In January, I
+submitted this proposal:</p>
+
+<p>&ldquo;Come hear about how Nordstrom developed a Continuous Delivery workflow for Chef
+development. Engineers test cookbooks locally using Vagrant, then commit to Git,
+which triggers a Jenkins build. Jenkins runs cookbook tests, then uploads
+cookbooks to our Private Chef server.&rdquo;</p>
+
+<p>Which would have made a great talk. In January, we hadn&rsquo;t even started on a CD
+pipeline for Chef Cookbooks. By April, we hadn&rsquo;t even started on a CD
+pipeline for Chef Cookbooks. I finally had to admit, there was no way I could
+get up and talk about something we hadn&rsquo;t done yet. I had to email Nathen Harvey
+at Opscode and tell him I needed to talk about a different topic. He was great
+and I was able to pick a new topic, one I knew I had quite a bit of experience
+with.</p>
+
+<p>So my advice is to pick a topic on which you already have experience instead of
+something you hope to get to before the confernece.</p>
+
+<h2>The Preparation</h2>
+
+<p>Preparing for a talk is a lot of work. I estimate I spent an 60-75 min for every
+minute of actual speaking time, roughly 30-35 hours of work for a 25 min talk.
+When you know you&rsquo;re going to be speaking in front of very smart engineers, you
+really need to know your topic thoroughly and anticipate the kinds of questions
+you&rsquo;ll get.</p>
+
+<h2>Tell a Story</h2>
+
+<p>Don&rsquo;t just dive into technical details and code samples. Tell a story. We humans
+are hard-wired to engage with stories. Share a problem you faced, why it was
+challenging, what you tried that didn&rsquo;t work, and how you overcame it. Then dive
+into the technical details. Your audience will be ready to hear you talk about
+the technical nitty-gritty after you&rsquo;ve got their attention with a story.</p>
+
+<h2>Presentation Zen</h2>
+
+<p>I have used <a href="http://www.amazon.com/Presentation-Zen-Simple-Delivery-Edition/dp/0321811984">Presentation Zen</a> by Garr Reynolds for several presentations and
+I can&rsquo;t recommend it enough. You should read this before your next presentation.</p>
+
+<h2>Practice</h2>
+
+<p>I gave my talk three times before I gave it for real. I presented it to my team
+twice and I presented it to the Seattle Chef meetup the week before Chef Conf.
+Even though these were unfinished drafts, I got very valuble feedback from a
+friendly audience. My talk was much better because of the practice and feedback
+I received. It also gave me confidence that my topic was useful and helpful to
+people.</p>
+
+<p>Nathen Harvey (Opscode) also scheduled a few Google+ hangouts for conference
+speakers which were very helpful. I got a chance to meet some other speakers and
+get my questions answered. He also encouraged speakers to send him our slides
+before the conference. It was just additional reassurance that I was on the
+right track.</p>
+
+<h2>Logistics</h2>
+
+<p>And finally, some logistical tips.</p>
+
+<ol>
+<li><p>Follow the code of conduct. This should go without saying, but no
+inappropriate content in your slides.</p></li>
+<li><p>Ask what resolution you&rsquo;ll be presenting at. I formatted my slides for 1024 x
+768 originally, and then had to change to 1280 x 720. This makes a big
+difference if you are using full-bleed photos.</p></li>
+<li><p>Make sure any photos are licensed for reuse. I find nearly all my slide
+photos by doing Creative Commons-licensed searches on Flickr.com.</p></li>
+<li><p>Give proper attribution for photos you use. I usually just paste the link to
+the photo in the bottom right-hand corner of the slide.</p></li>
+<li><p>Have your slides on your laptop <strong>and</strong> on a USB stick. Even if you are
+supposed to present on your laptop, it may not work and you may have to use a
+conference provided laptop.</p></li>
+<li><p>Don&rsquo;t depend on using Keynote Remote from your phone to drive the slides. You
+can almost count on conference wifi or a Bluetooth connection being flaky.
+Use a real remote.</p></li>
+<li><p>Show up 15 min before your talk to get setup with the mic, make sure your
+laptop can connect to the projector, etc.</p></li>
+<li><p>Ask for a glass or bottle of water for your talk.</p></li>
+<li><p>Get enough sleep the night before.</p></li>
+<li><p>Bring any video adapters you may need, e.g HDMI, DVI, etc.</p></li>
+<li><p>If you are having one of your teammates join you on stage, ask the
+conference organizers for a mic for them.</p></li>
+<li><p>Repeat the question. People in the audience and people watching your
+presentation later will appreciate you repeating any questions you get
+before answering them.</p></li>
+<li><p>Display code on a light background. If you create Github gists for each of your
+code samples, you can copy/paste those into your slides and it will preserve
+the formatting.</p></li>
+<li><p>Have a printed copy of your slide notes with you. Your carefully crafted
+prensenter display may not work with the conference projector and you may
+end up with just your slides showing on your laptop instead of your presenter
+display with slide notes.</p></li>
+</ol>
+
+
+<h2>Summary</h2>
+
+<p>That&rsquo;s it for this week. I hope you&rsquo;ll get a chance to present at a future
+conference if you haven&rsquo;t already. I&rsquo;d love to hear your presentation tips in
+the comments. Cheers.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Will you join us?]]></title>
+    <link href="http://dougireton.github.io/blog/2013/04/14/will-you-join-us/"/>
+    <updated>2013-04-14T21:00:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/04/14/will-you-join-us</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>This week, the week before Chef Conf, I&rsquo;d like to talk a bit about our team and our culture, and invite you to join us.</p>
+
+<h2>tl;dr</h2>
+
+<p>Here&rsquo;s our job posting for a spot on our <a href="https://nordstrom.taleo.net/careersection/2/jobdetail.ftl?job=292465">Infrastructure Engineering team</a>, which I hope you&rsquo;ll read, but I also hope you&rsquo;ll read on to get a personal feel for our team and the huge cultural shift happening right now at Nordstrom.</p>
+
+<!--more-->
+
+
+<p>I&rsquo;ve been working at Nordstrom for five years, first on the Windows Server Engineering team, then on Nordstrom.com as a developer, then as a build engineer, and finally on the Infrastructure Engineering team as a developer, working with Chef everyday. Up until very recently, Nordstrom has run a pretty traditional IT shop, big, heavily-planned projects, a preference for expensive, complicated vendor tools (Oracle, CA, Microsoft, BMC, etc) and siloed teams. I hope you&rsquo;ll see in a minute that we are taking real steps to become more agile, embrace open source tools, and become more cross-disipline, but first, a story.</p>
+
+<h2>Follow your heart</h2>
+
+<p>Three and a half years ago I had my normal performance review and, at the end of it my manager, Andrea, asked me about career goals/aspirations. I told her that I really wanted to be a developer. I had been playing around with Rails at home and really enjoyed it. Even though I was not qualified to be a &ldquo;real&rdquo; developer, she encouraged me to have coffee with Gina, one of the development managers for Nordstrom.com. Nordstrom has a very relational culture and &ldquo;having coffee&rdquo; is how you build important relatinoships. After having coffee with Gina, I had coffee with another dev manager, a project manager, and three other Nordstrom.com web developers. I&rsquo;m sure they went easy on me and thankfully, I didn&rsquo;t have to write a linked list pseudo-code implemtation on the whiteboard since I don&rsquo;t even have a CS degree. After about six months of time where I wrapped up my Windows Server Engineering projects, and tried to read up on web development, I moved over to the Nordstrom.com dev team.</p>
+
+<p>The dev team had been thinking about how to incorporate me into the team without too much disruption, and they paired me up with a mentor, an experienced dev who was very good at teaching and pointing me in the right direction. I also bought a couple of C# books and started reading like crazy. I felt way out of my depth when I was assigned my first feature, but Tim, my mentor outlined all the places in the code I&rsquo;d need to make changes and patiently answered all my implmentation questions. I felt quite a sense of pride when my feature shipped four months later.</p>
+
+<h2>Four months later?</h2>
+
+<p>Wait, four months later? One of the big frustrations we had was that actually deploying code to production web servers was so difficult. Features were bundled into big 4-5 month project releases and cross-team code merges were saved unti the end of the project, which caused all the problems you may imagine. After working on the dev team for five months, I had the opportunity to move to a newly forming team focused on fixing our build and deployment process. I&rsquo;ll gloss over my time as a build engineer, but out of it I got a better understanding of how complicated it is to deliver reliable and consistent builds to prod on a regular basis. Also in that time, the dev teams decided to move to a three-week cadence for prod deployments instead of 4-5 months which was a huge change.</p>
+
+<h2>Chef and Infrastruture Engineering</h2>
+
+<p>During my tenure as a build engineer, we started to evaluate Chef.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Favorites from the treasure chest]]></title>
+    <link href="http://dougireton.github.io/blog/2013/04/06/favorites-from-the-treasure-chest/"/>
+    <updated>2013-04-06T07:51:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/04/06/favorites-from-the-treasure-chest</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Work has been busy and I&rsquo;ve been working on my <a href="http://chefconf.opscode.com/">Chef Conf</a> presentation in my &ldquo;free&rdquo; time, so this week I&rsquo;m rounding up some links I think you&rsquo;ll like.</p>
+
+<ol>
+<li><p><a href="http://jtimberman.housepub.org/blog/2013/02/16/last-check-in-time-for-nodes/">Last check-in time for nodes</a> by Josh Timberman. Nice short post with great explanations.</p></li>
+<li><p><a href="http://erik.hollensbe.org/2013/03/16/the-chef-resource-run-queue/">How the Chef client builds the Resource Collection queue</a> by Eric Hollensbe. I have a much better understanding of how a Chef run actually works after reading this.</p></li>
+<li><p>Good <a href="https://speakerdeck.com/nathenharvey/testing-your-automation">overview of Chef testing</a> by Nathen Harvey.</p></li>
+<li><p>Also see Joshua Timberman&rsquo;s <a href="http://jtimberman.housepub.org/blog/2013/03/19/anatomy-of-a-test-kitchen-1-dot-0-cookbook-part-1/">Anatomy of a Test Kitchen 1.0 Cookbook</a> for more testing goodness.</p></li>
+</ol>
+
+
+<!--more-->
+
+
+<ol>
+<li><p>Chef Shell (a.k.a. Shef) <a href="http://stevendanna.github.io/blog/2012/01/28/shef-debugging-tips-1/">debugging tips</a> by Steven Danna. This is one blog post I really need to dig into when I have a free morning.</p></li>
+<li><p><a href="http://www.slideshare.net/500startups/ross-synder-etsy-sxsw-lean-startup-2013">Continuous Deployment at Etsy</a>. An excellent presentation by Ross Snyder at Etsy. Need to convince your boss that Continuous Delivery/Deployment is a good idea? This will help.</p></li>
+<li><p>Jon Cowie from Etsy will reprise his Velocity 2012 talk <a href="http://oreillynet.com/pub/e/2576">Michelin Starred Cooking with Chef</a> on May 14th, 2013. I attended this talk at Velocity last year and I&rsquo;m looking forward to seeing it again. Highly recommended.</p></li>
+<li><p>I was just going to have seven links but I couldn&rsquo;t help add this one in. Josh Timberman&rsquo;s Big Ruby Conf talk on <a href="https://speakerdeck.com/jtimberman/5-things-you-didnt-know-about-chef">5 Things You Didn&rsquo;t Know About Chef</a>.</p></li>
+</ol>
+
+
+<p>That&rsquo;s it for this week. Hope you pick up some good tips from these links. Happy Cooking!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Chef wanted. Apply within]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/31/chef-wanted-apply-within/"/>
+    <updated>2013-03-31T19:54:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/31/chef-wanted-apply-within</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>This week, we&rsquo;ll take a look at <a href="http://tickets.opscode.com/browse/CHEF-3571"><code>chef-apply</code></a>, a command-line tool, new to Chef 11, which assists with rapid development and troubleshooting by letting you run a single recipe at a time.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ruby -p -i -e]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/"/>
+    <updated>2013-03-24T21:28:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e</id>
+    <content type="html"><![CDATA[<p>This week we&rsquo;ll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables.</p>
+
+<h2><a href="http://www.youtube.com/watch?v=bKK-KLDlm20">The Tragic Backstory</a></h2>
+
+<p>At work, we have to go through a proxy server to get to the Internet. To use git, curl, etc. I have to set my <code>http(s)_proxy</code> environment varables. At home I have to unset them since I don&rsquo;t have a proxy at home. Editing my .zshenv twice a day got pretty tedious so I decided to script it.</p>
+
+<p>At first I tried using sed but after trying for an hour to understand how to write a simple sed script, I opted for Ruby. As it turns out, Ruby has very good support for line-editing and substitution.</p>
+
+<!--more-->
+
+
+<h2>The Problem</h2>
+
+<p>Here are the first two lines of my <code>.zshenv</code> file with the relevant proxy variables:</p>
+
+<figure class='code'><figcaption><span>.zshenv</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">http_proxy</span><span class="o">=</span><span class="s2">&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">https_proxy</span><span class="o">=</span><span class="s2">&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># --- &lt;snip&gt; ---</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My script needed to be able to comment out only those two lines, like this:</p>
+
+<figure class='code'><figcaption><span>.zshenv with proxy lines commented</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># export http_proxy=&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'><span class="c"># export https_proxy=&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># --- &lt;snip&gt; ---</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The solution &ndash; <a href="http://www.crumblycookie.net/2012/06/16/strawberry-rhubarb-pie/">Delicious PIE</a></h2>
+
+<p>Ruby has many command line options (type <code>ruby -h</code> to see them), but three are particularly relevant to solving this problem. The first one is <code>-i</code>, which means edit in place instead of making a copy. The next one is <code>-p</code>, which makes Ruby &ldquo;print&rdquo;, or iterate over each line of your input file so your script can act on each line. Basically it saves you the trouble of reading in the file and creating a line interator. Pretty handy. Finally, the <code>-e</code> allows you to pass a one-line Ruby script to <code>ruby</code>.</p>
+
+<p>All together, these options allow you to read in an input file, interate over each line (<code>-p</code>), edit in place (<code>-i</code>), and execute a one-line script (<code>-e</code>) against each line.</p>
+
+<figure class='code'><figcaption><span>noproxy.sh script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Comment out lines beginning with &quot;export http(s)_proxy&quot;</span>
+</span><span class='line'><span class="c"># This will set no proxy</span>
+</span><span class='line'>ruby -i -pe <span class="s2">&quot;gsub /^export https{0,1}_proxy=/, &#39;# \0&#39;&quot;</span> ~/.zshenv
+</span><span class='line'>
+</span><span class='line'><span class="nb">source</span> ~/.zshenv
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Above is the script to comment out <code>http(s)_proxy</code> lines for when I&rsquo;m not at work. The Ruby one-liner is a gsub which finds lines beginning with <code>http_proxy</code> or <code>https_proxy</code> and prepends a comment char (#) before the entire match, represented with <code>\0</code>.</p>
+
+<figure class='code'><figcaption><span>proxy.sh script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Uncomment lines beginning with &quot;export http(s)_proxy&quot;</span>
+</span><span class='line'><span class="c"># This will set a proxy</span>
+</span><span class='line'>ruby -i -pe <span class="s2">&quot;gsub /^# (export https{0,1}_proxy=)/, &#39;\1&#39;&quot;</span> ~/.zshenv
+</span><span class='line'>
+</span><span class='line'><span class="nb">source</span> ~/.zshenv
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is the script to uncomment the <code>http(s)_proxy</code> lines for when I&rsquo;m working for the man. It&rsquo;s quite similar to the script above but replaces the <code>http(s)_proxy</code> lines with the <code>\1</code> reference which matches the part of the match in parenthesis.</p>
+
+<p>By making this script executable, and putting it in my <code>~/bin</code> directory, I can just run <code>proxy.sh</code> to set my proxy, and <code>noproxy.sh</code> to unset my proxy. The script automatically re-sources my <code>.zshenv</code> so I don&rsquo;t have to close and reopen my terminal.</p>
+
+<h2>The 80/20 Rule</h2>
+
+<p>All in all I&rsquo;m pretty happy with my solution. It&rsquo;s not perfect. I&rsquo;d really like to automatically run when I switch Mac network Locations, but for now it&rsquo;s making my life easier with only one line of Ruby. It gets me at least 80% of the way there and I&rsquo;m happy to stop bike shedding it for now.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So, with the help of Ruby&rsquo;s command-line options, we learned how to write a simple shell script to gsub lines in a text file using a Ruby one-liner. Ruby&rsquo;s command-line options are pretty handy, check them out with <code>ruby -h</code>.</p>
+
+<p>For even more Ruby one-liners, check out <a href="http://benoithamelin.tumblr.com/post/10945200630/text-processing-1liners-ruby-vs-awk">&ldquo;Text processing one-liners: Ruby vs. Awk&rdquo;</a>, and <a href="http://benoithamelin.tumblr.com/ruby1line/">&ldquo;Ruby one-liners&rdquo;</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A knife.rb for our time]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/"/>
+    <updated>2013-03-17T20:44:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>The basic knife.rb you get from the Chef server works, but it&rsquo;s not suitable to check into version control or share with your team. It has the name of your .pem file hardcoded into it and isn&rsquo;t flexible enough for team use. This week we&rsquo;ll look at a generic, flexible <code>knife.rb</code> you can keep in your <code>chef-repo</code> and share with your team.</p>
+
+<!--more-->
+
+
+<h2>What you get out of the box</h2>
+
+<p>Here&rsquo;s the knife.rb you&rsquo;ll get if you ask the Chef server to generate one for you:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">current_dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">log_level</span>                <span class="ss">:info</span>
+</span><span class='line'><span class="n">log_location</span>             <span class="no">STDOUT</span>
+</span><span class='line'><span class="n">node_name</span>                <span class="s2">&quot;my_username&quot;</span>
+</span><span class='line'><span class="n">client_key</span>               <span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/my_username.pem&quot;</span>
+</span><span class='line'><span class="n">validation_client_name</span>   <span class="s2">&quot;my_org-validator&quot;</span>
+</span><span class='line'><span class="n">validation_key</span>           <span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/my_org-validator.pem&quot;</span>
+</span><span class='line'><span class="n">chef_server_url</span>          <span class="s2">&quot;https://chefserver.example.com/organizations/my_org&quot;</span>
+</span><span class='line'><span class="n">cache_type</span>               <span class="s1">&#39;BasicFile&#39;</span>
+</span><span class='line'><span class="n">cache_options</span><span class="p">(</span> <span class="ss">:path</span> <span class="o">=&gt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOME&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">/.chef/checksums&quot;</span> <span class="p">)</span>
+</span><span class='line'><span class="n">cookbook_path</span>            <span class="o">[</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/../cookbooks&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>A Better Implementation</h2>
+
+<p>Here&rsquo;s what we&rsquo;ve come up with after lots of tinkering. It works on Windows and Mac/Linux. Put this in your <code>chef-repo/.chef/</code> directory and check it into source control.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">current_dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">user_email</span>  <span class="o">=</span> <span class="sb">`git config --get user.email`</span>
+</span><span class='line'><span class="n">home_dir</span>    <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOME&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOMEDRIVE&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="n">org</span>         <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;chef_org&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="s1">&#39;my_org&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">knife_override</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/knife_override.rb&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">chef_server_url</span>          <span class="s2">&quot;https://chefserver.example.com/organizations/</span><span class="si">#{</span><span class="n">org</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="n">log_level</span>                <span class="ss">:info</span>
+</span><span class='line'><span class="n">log_location</span>             <span class="no">STDOUT</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># USERNAME is UPPERCASE in Windows, but lowercase in the Chef server,</span>
+</span><span class='line'><span class="c1"># so `downcase` it.</span>
+</span><span class='line'><span class="n">node_name</span>                <span class="p">(</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;USER&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;USERNAME&#39;</span><span class="o">]</span> <span class="p">)</span><span class="o">.</span><span class="n">downcase</span>
+</span><span class='line'><span class="n">client_key</span>               <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/</span><span class="si">#{</span><span class="n">node_name</span><span class="si">}</span><span class="s2">.pem&quot;</span>
+</span><span class='line'><span class="n">cache_type</span>               <span class="s1">&#39;BasicFile&#39;</span>
+</span><span class='line'><span class="n">cache_options</span><span class="p">(</span> <span class="ss">:path</span> <span class="o">=&gt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/checksums&quot;</span> <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># We keep our cookbooks in separate repos under a ~/chef/cookbooks dir</span>
+</span><span class='line'><span class="n">cookbook_path</span>            <span class="o">[</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/../../../cookbooks&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="n">cookbook_copyright</span>       <span class="s2">&quot;Your Company, Inc.&quot;</span>
+</span><span class='line'><span class="n">cookbook_license</span>         <span class="s2">&quot;none&quot;</span>
+</span><span class='line'><span class="n">cookbook_email</span>           <span class="s2">&quot;</span><span class="si">#{</span><span class="n">user_email</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">http_proxy</span>               <span class="s2">&quot;http://webproxy.example.com:80&quot;</span>
+</span><span class='line'><span class="n">https_proxy</span>              <span class="s2">&quot;http://webproxy.example.com:80&quot;</span>
+</span><span class='line'><span class="n">no_proxy</span>                 <span class="s2">&quot;localhost, 10.*, *.example.com, *.dev.example.com&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Allow overriding values in this knife.rb</span>
+</span><span class='line'><span class="ss">Chef</span><span class="p">:</span><span class="ss">:Config</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">knife_override</span><span class="p">)</span> <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">knife_override</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The Goods</h2>
+
+<p>Most of this should be self-explanitory, but there are a couple of interesting things to note. We are getting the user&rsquo;s email from git config on the fly. We use this to set the <code>cookbook_email</code> attribute so it&rsquo;s automatically populated when you create a new cookbook. On line three, we are getting the Home directory which is <code>HOME</code> on Mac and <code>HOMEDRIVE</code> on Windows. On line four, we are getting the <code>org</code> variable. It will default to <code>my_org</code>, but allows you to override it by setting the <code>chef_org</code> environment variable.</p>
+
+<h2>Knife Override</h2>
+
+<p>On line six, we are setting the path to a <code>knife_override.rb</code> file. We source the file at the end of this <code>knife.rb</code> so you can override any values specified in this <code>knife.rb</code>. So far we&rsquo;ve never used it, but it seemed like a good idea at the time.</p>
+
+<h2>Client keys</h2>
+
+<p>On line 14 we are setting the <code>node_name</code> which is your Chef server username. On Mac/Linux, your username is stored in the <code>USER</code> env variable. On Windows, it&rsquo;s <code>USERNAME</code>. Windows usually stores your username in UPPERCASE. We downcase it here since Chef server usernames are lowercase.</p>
+
+<p>On line 15, we are specifying the location of the user&rsquo;s Chef client key (.pem file). We store it in our home directories since we use the same client key for mulitple orgs.</p>
+
+<h2>Proxies, etc</h2>
+
+<p>The rest of the file is pretty straightforward. We use a proxy server at work, so we specify proxy settings. Finally, we source our <code>knife_override.rb</code> if it exists.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So there you have it. We use this same <code>knife.rb</code> in all our <code>chef-repos</code> and check it into version control. When someone wants to use our repo, they just check it out of Git and they can start using knife immediately. The only other step they have to do is to move their client key (username.pem file) to <code>~/.chef/</code>.</p>
+
+<p>I&rsquo;d be remiss if I didn&rsquo;t point out Joshua Timberman&rsquo;s excellent <a href="https://gist.github.com/jtimberman/1718805">&ldquo;Commented knife.rb for all the things&rdquo;</a>. Lot&rsquo;s of good ideas in there too.</p>
+
+<p>Let me know any cool tricks you&rsquo;re using in your <code>knife.rb</code>. Thanks and see you next week!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Flip your unicorn!]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/07/flip-your-unicorn/"/>
+    <updated>2013-03-07T20:47:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/07/flip-your-unicorn</id>
+    <content type="html"><![CDATA[<p>Let&rsquo;s say you had a unicorn in your code. Maybe something like this:</p>
+
+<pre>
+                                           ________
+                                        .##@@&&&@@##.
+     \                               ,##@&::%&&%%::&@##.
+     ^\^                            #@&:%%000000000%%:&@#
+     /.(((                        #@&:%00'         '00%:&@#
+    (,/"(((__,--.                #@&:%0'             '0%:&@#
+        \  ) _( /{              #@&:%0                 0%:&@#
+        !|| " :||              #@&:%0                   0%:&@#
+        !||   :||              #@&:%0                   0%:&@#
+        '''   '''              "" ' "                   " ' ""
+</pre>
+
+
+<h2>But it&rsquo;s so wrong!</h2>
+
+<p>Clearly, something is wrong with the unicorn. It&rsquo;s not facing the rainbow. This week, we&rsquo;ll learn how to flip the unicorn (or any other text) with an awesome Vim <a href="http://www.drchip.org/astronaut/vim/index.html#Maps">Visual mode mapping</a> courtesy of the inimitable <a href="http://www.drchip.org/astronaut/vim/index.html">Dr. Chip</a></p>
+
+<!--more-->
+
+
+<h2>Show me the map!</h2>
+
+<p>Here it is, just don&rsquo;t ask me to explain it.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'>vno  <span class="p">&lt;</span><span class="k">silent</span><span class="p">&gt;</span> <span class="p">&lt;</span>Leader<span class="p">&gt;</span>fR   <span class="k">c</span><span class="p">&lt;</span>C<span class="p">-</span>O<span class="p">&gt;</span>:<span class="k">set</span> <span class="k">ri</span> <span class="nb">lz</span><span class="p">&lt;</span><span class="k">cr</span><span class="p">&gt;&lt;</span>C<span class="p">-</span>R<span class="p">&gt;</span>&quot;<span class="p">&lt;</span>esc<span class="p">&gt;</span>:norm<span class="p">!</span> dd`<span class="p">&lt;&lt;</span><span class="k">cr</span><span class="p">&gt;</span>:<span class="k">set</span> <span class="k">ri</span><span class="p">!</span> <span class="nb">lz</span><span class="p">!&lt;</span><span class="k">cr</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>And, here are the results*</h2>
+
+<pre>
+            /       \               
+          ^/^       ^\^          
+        ))).\       /.(((        
+ .--,__)))"\,)     (,/"(((__,--. 
+}\ )_ (  /             \  ) _( /{
+ ||: " ||!             !|| " :|| 
+ ||:   ||!             !||   :|| 
+ '''   '''             '''   ''' 
+</pre>
+
+
+<p>Well, not exactly. The mapping doesn&rsquo;t exactly flip text. It won&rsquo;t turn a <code>)</code> into a <code>(</code>, or a <code>}</code> into a <code>{</code>. It just exchanges or swaps the places of the characters. Still it gets pretty close, much easier than trying to do it by hand. You can then run substitute commands to flip the <code>)</code>, <code>\</code>, and <code>}</code>.</p>
+
+<h2>The Actual Results</h2>
+
+<pre>
+            \ 
+          ^\^ 
+        (((./ 
+ .--,__((("/,(
+{/ (_ )  \    
+ ||: " ||!    
+ ||:   ||!    
+ '''   '''    
+</pre>
+
+
+<h2>Uhhh, ok, why would you want to do this?</h2>
+
+<p>I have no idea, unless you had a unicorn you wanted to flip on a deadline. Thanks to Google and Dr. Chip for this (marginally useful) Vim tip! Until next week, cheers!</p>
+
+<p>For the rest of the mappings which will flip text upside down as well, see <a href="http://www.drchip.org/astronaut/vim/index.html#Maps">Dr. Chip&rsquo;s maps section</a> on his awesomely 1995 website.</p>
+
+<pre>
+                                         ________
+                                      .##@@&&&@@##.
+                 /                 ,##@&::%&&%%::&@##.                   \                       
+               ^/^                #@&:%%000000000%%:&@#                  ^\^          
+             ))).\              #@&:%00'         '00%:&@#                /.(((        
+      .--,__)))"\,)            #@&:%0'             '0%:&@#              (,/"(((__,--. 
+     }\ )_ (  /               #@&:%0                 0%:&@#                 \  ) _( /{
+      ||: " ||!              #@&:%0                   0%:&@#                !|| " :|| 
+      ||:   ||!              #@&:%0                   0%:&@#                !||   :|| 
+      '''   '''              "" ' "                   " ' ""                '''   ''' 
+</pre>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Send application deploy times to StatsD in a Chef recipe]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe/"/>
+    <updated>2013-03-02T14:48:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>This week, I&rsquo;ll show you how to time application deploys (or anything else) inside a Chef recipe and send metrics to <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">StatsD</a>.</p>
+
+<p>At work, we&rsquo;re working to integrate metrics into more and more aspects of our development pipeline. We are already sending Chef run data to Graphite and <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Chef client version metrics</a> to StatsD/Graphite. This past week, I worked on timing our application deploys via the <a href="https://github.com/reinh/statsd">Statsd-Ruby</a> library inside a Chef recipe. Read on to see how easy it is.</p>
+
+<!--more-->
+
+
+<h2>Deploy Recipe Part One &ndash; Require StatsD</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">GEM_SERVER</span> <span class="o">=</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;gem_server&#39;</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">chef_gem</span> <span class="s1">&#39;statsd-ruby&#39;</span> <span class="k">do</span>
+</span><span class='line'><span class="n">version</span> <span class="s1">&#39;1.2.0&#39;</span>
+</span><span class='line'><span class="n">options</span><span class="p">(</span><span class="s2">&quot;--clear-sources --source </span><span class="si">#{</span><span class="no">GEM_SERVER</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;statsd&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We use an internal Gem server, since our servers are behind firewalls without open access to the Internet. The first part of our app deployment recipe just gets the <code>statsd-ruby</code> gem installed and ready.</p>
+
+<h2>Deploy Recipe Part Two &ndash; Start the Timer</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">statsd</span> <span class="o">=</span> <span class="no">Statsd</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;mystatsd-server.example.com&#39;</span><span class="p">,</span> <span class="mi">8125</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ruby_block</span> <span class="s1">&#39;Start of app deployment&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">block</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># start the timer</span>
+</span><span class='line'>    <span class="n">node</span><span class="o">.</span><span class="n">run_state</span><span class="o">[</span><span class="s1">&#39;app_deploy_start&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'>    <span class="ss">Chef</span><span class="p">:</span><span class="ss">:Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;Starting app deploy at </span><span class="si">#{</span><span class="n">node</span><span class="o">.</span><span class="n">run_state</span><span class="o">[</span><span class="s1">&#39;app_deploy_start&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this section of our deply recipe, we initialize a new StatsD server variable and save our app deploy start time in a <code>node.run_state</code> variable. I had trouble getting local variables to work for saving the start time for use later so I ended up using Chef&rsquo;s <code>node.run_state</code> to save the start time. Big thanks to <a href="https://twitter.com/hippiehacker">Chris McClimans</a> for this solution.</p>
+
+<h2>Deploy Recipe Part Three &ndash; Send Elapsed Time to StatsD</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># --------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1"># Insert Chef resources here needed to deploy the app to our web sever</span>
+</span><span class='line'><span class="c1"># --------------------------------------------------------------------</span>
+</span><span class='line'><span class="n">execute</span> <span class="s2">&quot;Deploy the app&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ruby_block</span> <span class="s2">&quot;End of app deployment&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">block</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># calculate elapsed time for deployment and send to StatsD</span>
+</span><span class='line'>    <span class="n">deploy_end</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'>    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">deploy_end</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">run_state</span><span class="o">[</span><span class="s1">&#39;app_deploy_start&#39;</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Replace &quot;.&quot; with underscores in node name so Graphite doesn&#39;t create</span>
+</span><span class='line'>    <span class="c1"># a bucket for each part of the FQDN</span>
+</span><span class='line'>    <span class="n">node_name_underscores</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Use `statsd-ruby` timing method to send data to StatsD</span>
+</span><span class='line'>    <span class="n">statsd</span><span class="o">.</span><span class="n">timing</span> <span class="s2">&quot;my_app.</span><span class="si">#{</span><span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="si">}</span><span class="s2">.</span><span class="si">#{</span><span class="n">node_name_underscores</span><span class="si">}</span><span class="s2">.deploy_time&quot;</span><span class="p">,</span> <span class="n">elapsed_time</span>
+</span><span class='line'>    <span class="ss">Chef</span><span class="p">:</span><span class="ss">:Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;App deployment took </span><span class="si">#{</span><span class="n">elapsed_time</span><span class="si">}</span><span class="s2"> seconds.&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the final part of our recipe, we do the actual deploy (not shown), then calculate the elapsed time and send to StatsD in a final Ruby block resource. We have to use a <code>ruby_block</code> resource because that will ensure the timing code is run at <a href="http://wiki.opscode.com/display/chef/Anatomy+of+a+Chef+Run">Convege time instead of earlier in Compile time</a>.</p>
+
+<h2>Results</h2>
+
+<div>
+<img class="left" src="http://dougireton.github.io/images/app_deploy_times.png" width="800" height="600" title="'App Deploy Times'" >
+</div>
+
+
+<p>As you can see, our app is deploying in roughly 100 seconds. Although we are just starting out with tracking &ldquo;all the things&rdquo;, it&rsquo;s pretty addicting once you get started.</p>
+
+<p>Hopefully you&rsquo;ve seen this week how easy it is to send metrics to StatsD/Graphite from inside a Chef recipe. I&rsquo;d love to hear in the comments what kind of stats you are tracking. Thanks for reading.</p>
+
+<p>Finally, I&rsquo;d be remiss if I didn&rsquo;t point to the blog post which got us started down the metrics road, Etsy&rsquo;s <a href="http://codeascraft.etsy.com/2010/12/08/track-every-release/">&ldquo;Tracking Every Release&rdquo;</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Lay out your .vimrc like a Boss]]></title>
+    <link href="http://dougireton.github.io/blog/2013/02/23/layout-your-vimrc-like-a-boss/"/>
+    <updated>2013-02-23T15:21:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/02/23/layout-your-vimrc-like-a-boss</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been using <a href="http://www.vim.org/">Vim</a> for a few years now starting with the excellent <a href="https://github.com/carlhuda/janus">Janus</a> distribution of Vim settings and plugins. As excellent as Janus is though, I really wanted to know each and every setting and plugin for myself. I didn&rsquo;t want any settings I didn&rsquo;t understand.</p>
+
+<p>About eight months ago I decided to get serious. I stripped down my .vimrc to about 20 settings I understood and could start using. I put my .vimrc and plugins in a <a href="https://github.com/dougireton/vimfiles">Git repo</a>. I slowly added settings one by one as I learned more about Vim.</p>
+
+<p>If you want to take a similar path, what follows is my recommended way of organizing your .vimrc to keep things organized.</p>
+
+<!--more-->
+
+
+<h2>Knobs and Dials</h2>
+
+<p>Vim has hundreds if not thousands of settings. It can be overwhelming or exciting, depending on your tolerance for fiddling with &ldquo;knobs and dials&rdquo;. For a long time, I was frustrated with most .vimrcs I saw, including my own. They seemed like giant junk drawers of settings.</p>
+
+<h2>The <code>:options</code> command</h2>
+
+<p>Finally, I hit upon a good organizing pattern. If you type <code>:options</code> in Vim&rsquo;s command mode, you get a giant list of Vim options grouped into related categories, e.g. &ldquo;moving around, searching and patterns&rdquo;, &ldquo;tags&rdquo;, &ldquo;displaying text&rdquo; and so on. These categories make an excellent way of grouping your own .vimrc settings. To get started, I just ran the <code>:options</code> command and copied each section heading in the same order as in the <em>option_window</em>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'> 1 important
+</span><span class='line'> 2 moving around, searching and patterns
+</span><span class='line'> 3 tags
+</span><span class='line'> 4 displaying text
+</span><span class='line'> 5 syntax, highlighting and spelling
+</span><span class='line'> 6 multiple windows
+</span><span class='line'> 7 multiple tab pages
+</span><span class='line'> 8 terminal
+</span><span class='line'> 9 using the mouse
+</span><span class='line'>10 printing
+</span><span class='line'>11 messages and info
+</span><span class='line'>12 selecting text
+</span><span class='line'>13 editing text
+</span><span class='line'>14 tabs and indenting
+</span><span class='line'>15 folding
+</span><span class='line'>16 diff mode
+</span><span class='line'>17 mapping
+</span><span class='line'>18 reading and writing files
+</span><span class='line'>19 the swap file
+</span><span class='line'>20 command line editing
+</span><span class='line'>21 executing external commands
+</span><span class='line'>22 running make and jumping to errors
+</span><span class='line'>23 language specific
+</span><span class='line'>24 multi-byte characters
+</span><span class='line'>25 various
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>A snippet from my .vimrc</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c">&quot;  moving around, searching and patterns</span>
+</span><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'><span class="k">set</span> <span class="nb">nostartofline</span>     <span class="c">&quot; keep cursor in same column for long-range motion cmds</span>
+</span><span class='line'><span class="k">set</span> <span class="nb">incsearch</span>        <span class="c">&quot; Highlight pattern matches as you type</span>
+</span><span class='line'><span class="k">set</span> <span class="nb">ignorecase</span>       <span class="c">&quot; ignore case when using a search pattern</span>
+</span><span class='line'><span class="k">set</span> <span class="nb">smartcase</span>        <span class="c">&quot; override &#39;ignorecase&#39; when pattern</span>
+</span><span class='line'><span class="c">                      &quot; has upper case character</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c">&quot;  tags</span>
+</span><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c">&quot;  displaying text</span>
+</span><span class='line'><span class="c">&quot; ----------------------------------------------------------------------------</span>
+</span><span class='line'><span class="k">set</span> <span class="nb">scrolloff</span><span class="p">=</span><span class="m">3</span>       <span class="c">&quot; number of screen lines to show around</span>
+</span><span class='line'><span class="c">                      &quot; the cursor</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once I had this organizing pattern I slowly added settings one by one, either by reading through the various Vim <a href="http://vimdoc.sourceforge.net/htmldoc/options.html">options</a>, or by reading through various .vimrcs I found online. I also picked up several great settings by reading <a href="http://pragprog.com/book/dnvim/practical-vim">Practical Vim</a> by <a href="http://drewneil.com/">Drew Neil</a>.</p>
+
+<p>Each time I added a setting, I made sure I understood it and added a explanitory comment to my .vimrc.</p>
+
+<h2>Next Steps</h2>
+
+<p>If you don&rsquo;t already have a pattern for your .vimrc, I invite you to try my idea. I&rsquo;ve found it makes my .vimrc more readable and sensible.</p>
+
+<p>I also invite you to check out my <a href="https://github.com/dougireton/vimfiles">.vimrc and other Vim settings on Github</a>. I&rsquo;ve tried to comment each setting in plain English so I know what the setting is when I&rsquo;m reading it six months later.</p>
+
+<p>I&rsquo;d love to hear any .vimrc related tips you have in the comments.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Chef: Patterns and Anti-Patterns for Cookbooks, Environments, Roles]]></title>
+    <link href="http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/"/>
+    <updated>2013-02-16T20:25:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>In this guide we&rsquo;ll look at some common Chef anti-patterns and I&rsquo;ll suggest alternative patterns which avoid the pitfalls and lead you to Chef nirvana.</p>
+
+<p>This post was inspired by BryanWB&rsquo;s post <a href="http://devopsanywhere.blogspot.com/2012/11/how-to-write-reusable-chef-cookbooks.html">How to write reusable cookbooks, Gangnam Style</a></p>
+
+<!--more-->
+
+
+<h2>Anti-Pattern: Modifying (forking) community cookbooks</h2>
+
+<p>I&rsquo;ve certainly done this and you probably have too. It starts off fairly innocently. You add an attribute here, maybe update the cookbook&rsquo;s metadata.rb. Pretty soon, you&rsquo;ve added recipes, multiple attributes and maybe an LWRP or two. Now you have a mess, especially if the cookbook is under active development on Github. You <em>will</em> have merge conflicts. You may get hard to debug logic errors if the upstream cookbook changes and your changes are similar but slightly different. And how do you version your &ldquo;Frankenstein&rdquo; cookbook? Do you take the upstream Github version number? Your own version number based on the upstream version number? In short this is an anti-pattern which can be hard to undo.</p>
+
+<p>The only exeception to this is when you want to share your changes back with the community. You should create a feature branch in Git with your changes and submit a pull request from that branch. This should be a short-lived branch which lives only until the pull request is merged upstream.</p>
+
+<h2>Pattern: Create a wrapper cookbook with your custom recipes and attributes</h2>
+
+<p>Instead of forking and modifying an upstream community or Opscode cookbook, you should use it unmodified with a company-specific wrapper cookbook on top. In your wrapper cookbook you will add a metadata dependency on the community cookbook and use <code>include_recipe</code> to run recipes from the community cookbook. Set company-specific attributes in your wrapper cookbook to override the community cookbook defaults. Company-specific recipes should go into this wrapper cookbook as well.</p>
+
+<p>See <a href="https://github.com/bryanwb/chef-rewind">Chef-Rewind</a> for a gem which can help you with this pattern.</p>
+
+<h2>Anti-Pattern: Using Role Attributes</h2>
+
+<p>Role attributes are a particularly dangerous anti-pattern which can can break your production environment. Imagine this scenario. You have a <code>web_server</code> role with attributes for names and properties of two web sites you need to create on that server. Now imagine you need to split those web sites into two separate server roles, <code>app_server</code>, and <code>blog_server</code>. How do you test it in your dev environment without breaking prod? You can either roll the dice and make the change, hoping your don&rsquo;t break your prod environment or you have to try to override those attributes in environment files (first dev, then test, then staging, etc) and remember to clean them up after you&rsquo;ve reached prod. Neither option is really workable.</p>
+
+<p>You should use attributes in a wrapper cookbook instead.</p>
+
+<h2>Pattern: Set custom attributes in a wrapper cookbook</h2>
+
+<p>Roles are not versioned. Cookkbooks are. By setting your custom attributes in a wrapper cookbook and pinning environments to specific cookbook versions, you can roll out attribute changes to dev, then test, then staging, then prod.</p>
+
+<p>Ideally, you would have your environments automatically pinned by your CI server (e.g. Jenkins) as you test and promote cookbooks from dev to test to staging to prod, but that setup is beyond the scope of this blog post.</p>
+
+<h2>Anti-Pattern: Setting a Server&rsquo;s Run List in a Role</h2>
+
+<p>Chef&rsquo;s Roles seem ideally suited to specifying the run list of all the recipes needed to build the server. However, this pattern suffers from the same problems as using Role Attributes above. If you add or remove recipes from the Role&rsquo;s <code>run_list</code>, that change affects all servers in the role, including Prod.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">name</span> <span class="s2">&quot;web_server&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;Role for web servers&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">run_list</span><span class="p">(</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::disk_configuration]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::dhcp_reservation]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::pagefile]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[utility::install_tools]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[web_server::web_sites]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::ssl_certs]&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Pattern: Setting a Server&rsquo;s Run List in a &ldquo;role&rdquo; or &ldquo;application&rdquo; cookbook&rsquo;s default recipe</h2>
+
+<p>Keep your Roles lightweight. The list of recipes needed to build your application or web server should be kept in an &ldquo;application&rdquo; cookbook instead of a Role. For example if you are building a prototypical web server, you Role should look like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">name</span> <span class="s2">&quot;web_server&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;Role for web servers&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">run_list</span><span class="p">(</span>
+</span><span class='line'>  <span class="s2">&quot;role[base]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe{web_server]&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Your web_server &ldquo;application&rdquo; cookbook&rsquo;s default recipe should look like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># web_server cookbook recipes/default.rb</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::disk_configuration&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::dhcp_reservation&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::pagefile&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;utility::install_tools&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;web_server::web_sites&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::ssl_certs&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Again, this is because you can easily version cookbooks and test recipe and attribute changes to version 2.1.0 of your cookbook in your &ldquo;Dev&rdquo; environment while you keep your &ldquo;Prod&rdquo; environment pinned to v1.5.0.</p>
+
+<h2>Wrap Up</h2>
+
+<p>By following the patterns above you will be save yourself major merging headaches by keeping your custom cookbook changes in wrapper cookbooks and be able to easily create targeted pull requests to share back with the community. By setting custom attributes in your wrapper cookbooks, you can roll changes from dev, to test, to prod by promoting an updated cookbook version through each environment. Finally, by keeping your server&rsquo;s run list in an &ldquo;application&rdquo; cookbook, you&rsquo;ll keep almost everything needed to build that server together in a versioned, testable cookbook.</p>
+
+<p>I hope you&rsquo;ll be able to take away some good practices here. We&rsquo;ve learned the hard way about each of the anti-patterns above and are still in the process of fully adopting the practices listed above. Feel free to comment about additional anti-patterns/patterns in the comments below.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[knife tricks]]></title>
+    <link href="http://dougireton.github.io/blog/2013/02/03/knife-tricks/"/>
+    <updated>2013-02-03T20:40:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/02/03/knife-tricks</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&rsquo;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon DeCamp</a>.</p>
+
+<h3>Find all nodes in an environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node chef_environment:&lt;environment name&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Find all nodes which contain a role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node role<span class="o">(</span>s<span class="o">)</span>:&lt;role name&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;role:web_server&quot;</span> -a hostname
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Use &lsquo;roles&rsquo; plural when looking in the expanded run list.</p>
+
+<!--more-->
+
+
+<h3>Find all nodes which contain a recipe</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># looks for statsd_handler(::default)</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:statsd_handler&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># note the use of \:\: to escape the double-colon</span>
+</span><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;recipes:windows\:\:reboot_handler&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note the use of <code>recipes</code> plural to search the expanded run list.</p>
+
+<h3>Find all non-64 bit nodes</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;(NOT kernel_machine:x86_64)&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Return selected attributes from knife search</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife search node <span class="s2">&quot;name:*&quot;</span> -a chef_packages.chef.version
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This returns the <code>chef_packages.chef.version</code> attribute from all nodes in the Chef Org.</p>
+
+<h3>Add a role to all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># First, run it like this to run without saving the results back to the Chef Server</span>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot; }&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[hosts_file]&quot;; n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To be on the safe side, run the command above without the <code>n.save</code> so results aren&rsquo;t saved back to the Chef server. When you are sure about the command run it with <code>n.save</code> to save the results back to the Chef server.</p>
+
+<h3>Add a role to all nodes in an Environment which don&rsquo;t contain the given Role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;chef_environment:dev&quot;) {|n| puts n.run_list &lt;&lt; &quot;role[base]&quot; unless n.run_list.include?(&quot;role[base]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove a recipe from all nodes in an Environment</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;chef_environment:dev&quot;) {|n| puts n.run_list.remove(&quot;recipe[chef-client::upgrade]&quot;); n.save }&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove all nodes from a given role</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.find(&quot;role:web_server&quot;) {|n| n.run_list.remove(&quot;role[web_server]&quot;); n.save}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Set a node&rsquo;s run_list back to a single item</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife <span class="nb">exec</span> -E <span class="s1">&#39;nodes.transform(&quot;name:webserver01.example.com&quot;) {|n| n.run_list([&quot;role[base]&quot;])}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>So that&rsquo;s it for this week. I hope you picked up some valuable knife tricks. The knife search command is versatile and combining <code>knife exec</code> with search allows you to do some amazing things with your infrstructure. Share some of your own knife tricks in the comments or over on Twitter.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Make Vim's Goto File command open included Chef recipes]]></title>
+    <link href="http://dougireton.github.io/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/"/>
+    <updated>2013-01-27T21:18:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at how to get <a href="http://dougireton.com/blog/2013/01/19/get-chef-clients-by-version/">Chef clients grouped by version</a>. This week, we&rsquo;ll look at something completely different &ndash; customizing Vim to jump to included Chef recipes via the <a href="http://vim.wikia.com/wiki/Open_file_under_cursor#Go_to_file">Goto File command</a> &ndash; <code>gf</code>.</p>
+
+<h2>TL;DR</h2>
+
+<p>Add this to your .vimrc to be able to jump to included recipes (via <code>include_recipe</code>). Caveat: you can only jump to fully-qualified recipe names, e.g. <code>my_cookbook::my_recipe</code>. Hitting <code>gf</code> on <code>include_recipe 'my_cookbook'</code>, won&rsquo;t jump to <code>my_cookbook::default</code>.</p>
+
+<figure class='code'><figcaption><span>.vimrc autocmd for include_recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; Make gf work on Chef include_recipe lines</span>
+</span><span class='line'><span class="c">&quot; Add all cookbooks/*/recipe dirs to Vim&#39;s path variable</span>
+</span><span class='line'>autocmd <span class="nb">BufRead</span><span class="p">,</span><span class="nb">BufNewFile</span> *<span class="sr">/cookbooks/</span>*<span class="sr">/recipes/</span>*.rb <span class="k">setlocal</span> <span class="nb">path</span><span class="p">+=</span>recipes;<span class="sr">/cookbooks/</span>**<span class="m">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Read on to find out why this works.</p>
+
+<!--more-->
+
+
+<h2>Including Recipes</h2>
+
+<p>In Chef you can <a href="http://docs.opscode.com/essentials_cookbook_recipes_in_recipes.html">include one recipe in another recipe</a>. For example, in one of our &ldquo;application&rdquo; cookbooks our <code>default.rb</code> recipe contains about 15 <code>include_recipe</code> statements which include recipes from the cookbook as well as recipes from other cookbooks. Often, I want to open one of the included recipes from the <em>default</em> recipe.</p>
+
+<h2>Vim Paths</h2>
+
+<figure class='code'><figcaption><span>.vimrc autocmd for include_recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="c">&quot; Make gf work on Chef include_recipe lines</span>
+</span><span class='line'><span class="c">&quot; Add all cookbooks/*/recipe dirs to Vim&#39;s path variable</span>
+</span><span class='line'>autocmd <span class="nb">BufRead</span><span class="p">,</span><span class="nb">BufNewFile</span> *<span class="sr">/cookbooks/</span>*<span class="sr">/recipes/</span>*.rb <span class="k">setlocal</span> <span class="nb">path</span><span class="p">+=</span>recipes;<span class="sr">/cookbooks/</span>**<span class="m">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The autocmd above runs when you read in an existing file (BufRead) or create a new file (BufNewFile) in a Chef cookbook <code>recipes</code> directory. The directory path <code>*/cookbooks/*/recipes/*.rb</code> assumes you have a <code>cookbooks</code> directory which contains your cookbooks and inside each cookbook you have a <code>recipes</code> directory.</p>
+
+<p>The <code>setlocal</code> sets the path option locally for the recipe file, not globally in Vim.</p>
+
+<p>The actual <code>path</code> value deserves a bit more explanation. <code>path+=recipes;/cookbooks/**1</code> means append <code>recipes</code> to the current working directory, and also go upwards to the <code>cookbooks</code> directory and search all directories one level down from <code>cookbooks</code> and append <code>recipes</code> to those as well. So in other words it will search for the file under the cursor in the current cookbook&rsquo;s <code>recipe</code> directory, and all other cookbooks&#8217; <code>recipe</code> directories as well.</p>
+
+<p>See Vim&rsquo;s help on <a href="http://vimdoc.sourceforge.net/htmldoc/editing.html#file-searching">file searching</a> for more info.</p>
+
+<h2>Conclusion</h2>
+
+<p>So there you have it.</p>
+
+<ol>
+<li>Throw that line in your .vimrc file</li>
+<li>??</li>
+<li><a href="http://www.youtube.com/watch?v=tO5sxLapAts">Profit</a></li>
+</ol>
+
+
+<p>Being able to jump to included Chef recipes is a handy little trick, but there is one caveat. It doesn&rsquo;t work for default recipes, e.g. <code>include_recipe "foo"</code>. The next step for this trick is to use the <code>includeexpr</code> <a href="http://vimdoc.sourceforge.net/htmldoc/options.html#'includeexpr'">option</a> to add <code>default.rb</code> to the filename.</p>
+
+<p>Next week, we&rsquo;ll look at various knife search tricks for getting data from your Chef server.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Get Chef Clients by version]]></title>
+    <link href="http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/"/>
+    <updated>2013-01-19T20:19:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>At work, we&rsquo;re being converted to the gospel of Etsy&rsquo;s <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Church of Graphs</a>. We&rsquo;re sending Chef run times and other metrics to a combination of <a href="https://github.com/etsy/statsd/">StatsD</a>, <a href="http://graphite.wikidot.com/">Graphite</a>, and <a href="http://fdietz.github.com/team_dashboard/">Team Dashboard</a>. Last week, I wanted to add a graph of chef clients by version. In other words, I wanted to see how many Chef 0.10.8, and 10.12 clients we have left to upgrade.</p>
+
+<p>This week, we&rsquo;ll see how to get Chef client versions from the Chef Server, including one way which turned out to be more than <strong>30 times faster</strong> in my tests.</p>
+
+<!--more-->
+
+
+<h2>The First Attempt</h2>
+
+<p>I needed to get a count of Chef clients grouped by version. I envisioned ending up with a hash like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My first thought was to do this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife node list | xargs -I <span class="o">{}</span> knife node show <span class="o">{}</span> -a chef_packages.chef.version -Fj
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This pipes a list of all nodes in an org to <code>knife node show</code> and returns <code>chef_packages.chef.version</code> in JSON format.</p>
+
+<p>This works, but it takes a <strong>loooong</strong> time, nearly 40 <strong>minutes</strong> on my quad-core Macbook Pro against our Private Chef server to get the Chef client version for 908 nodes, or ~2.4 seconds per node.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife node list
+</span><span class='line'>  1.82s user 0.36s system 75% cpu 2.878 total
+</span><span class='line'>
+</span><span class='line'>xargs -I <span class="o">{}</span> knife node show <span class="o">{}</span> -a chef_packages.chef.version
+</span><span class='line'>  1771.53s user 278.24s system 85% cpu ** 39:46.55 total **
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This takes so long because <code>knife node show</code> makes a round-trip to the Chef server for each node. We need to speed this up, preferably by an order of magnitude.</p>
+
+<h2>The Second Attempt</h2>
+
+<p>What if we asked the Chef server to get Chef Client version info for every node in the org and send it to us in one batch?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife search node <span class="s1">&#39;name:*&#39;</span> -a chef_packages.chef.version –Fj
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This approach is much more efficient; just over a minute instead of 40 minutes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife search node <span class="s1">&#39;name:*&#39;</span> -a chef_packages.chef.version –Fj
+</span><span class='line'>  40.72s user 1.54s system 57% cpu ** 1:13.81 total **
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The results from the knife search command look like this; easily parsable JSON.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;results&quot;</span><span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;rows&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;webserver01.example.com&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;webserver02.example.com&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.12.0&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;db01.example.com&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Ohai Spelunking</h2>
+
+<p>But, hold on a second, how did I know the Chef client version attribute is named <code>chef_packages.chef.version</code>? I didn&rsquo;t, but here&rsquo;s how I found it:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife node show myserver01.example.com -l | grep -C 5 10.16.2
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I knew that <code>myserver01.example.com</code> was running Chef Client 10.16.2. I did a <code>knife node show</code> with the <code>-l</code> option to show <strong>all</strong> Ohai attributes and grep&rsquo;d for <code>10.16.2</code> with five lines of context above and below (<code>-C 5</code>).</p>
+
+<p>Here&rsquo;s the result of that whole command:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>Automatic Attributes <span class="o">(</span>Ohai Data<span class="o">)</span>:
+</span><span class='line'>chef_packages:
+</span><span class='line'>  chef:
+</span><span class='line'>    chef_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.16.2/lib
+</span><span class='line'>    version:    10.16.2
+</span><span class='line'>  ohai:
+</span><span class='line'>    ohai_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/ohai-6.14.0/lib/ohai
+</span><span class='line'>    version:    6.14.0
+</span><span class='line'><span class="nb">command</span>:           <span class="o">{}</span>
+</span><span class='line'>counters:
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From the output above, I can walk down the <code>chef_packages</code> attribute to determine the attribute I&rsquo;m looking for is <code>chef_packages.chef.version</code>.</p>
+
+<h2>Parsing the Results</h2>
+
+<p>So, now that we have the raw JSON data, how can we turn it into this?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s take a look at a script to parse the JSON list of nodes into a nice &ldquo;grouped-by&rdquo; version hash:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;json&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">KNIFE_RB</span> <span class="o">=</span> <span class="s1">&#39;.chef/knife.rb&#39;</span>
+</span><span class='line'><span class="no">NODE_LIST</span> <span class="o">=</span> <span class="sb">`knife search node -c </span><span class="si">#{</span> <span class="no">KNIFE_RB</span> <span class="si">}</span><span class="sb"> &#39;name:*&#39; -a chef_packages.chef.version --format json 2&gt;&amp;1`</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">get_chef_clients_by_version</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># turn JSON into Ruby objects</span>
+</span><span class='line'>  <span class="n">nodes_json</span> <span class="o">=</span> <span class="no">JSON</span><span class="o">.</span><span class="n">parse</span> <span class="n">nodes</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># create an array of all chef client versions</span>
+</span><span class='line'>  <span class="n">client_versions</span> <span class="o">=</span> <span class="n">nodes_json</span><span class="o">[</span><span class="s1">&#39;rows&#39;</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">[</span><span class="s1">&#39;chef_packages.chef.version&#39;</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># initialize an empty hash to store our final counts grouped by version</span>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># For each item in the client_versions array, create a unique key in our</span>
+</span><span class='line'>  <span class="c1"># number_of_clients_by_version hash and increment our counter</span>
+</span><span class='line'>  <span class="n">client_versions</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">version</span><span class="o">|</span> <span class="n">number_of_clients_by_version</span><span class="o">[</span><span class="n">version</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="n">get_chef_clients_by_version</span><span class="p">(</span><span class="no">NODE_LIST</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s take it line by line. On line one we&rsquo;re requiring <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/json/rdoc/JSON.html">JSON</a>. On line four we&rsquo;re executing the <code>knife search</code> command. Lines 6 &ndash; 21 are a function to parse the node data into our final count of versions.</p>
+
+<h2>The <code>get_chef_clients_by_version</code> method</h2>
+
+<p>This method is where all the exciting stuff happens. On line 9, we&rsquo;re parsing the JSON data and creating a Ruby data structure which looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">,</span>
+</span><span class='line'> <span class="s2">&quot;rows&quot;</span><span class="o">=&gt;</span>
+</span><span class='line'>  <span class="o">[</span><span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;webserver01.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>   <span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;webserver02.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>   <span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;db01.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Line 12 is my favorite line of the method.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="c1"># create an array of all chef client versions</span>
+</span><span class='line'>  <span class="n">client_versions</span> <span class="o">=</span> <span class="n">nodes_json</span><span class="o">[</span><span class="s1">&#39;rows&#39;</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">[</span><span class="s1">&#39;chef_packages.chef.version&#39;</span><span class="o">]</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It uses Ruby&rsquo;s super useful <a href="http://www.ruby-doc.org/core-1.9.3/Enumerable.html#method-i-map"><code>map</code></a> method to create an simple array of versions from the <code>rows</code> array of two-element hashes. The result of the <code>map</code> looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">[</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;10.12.0&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From there we create and return the <code>number_of_clients_by_version</code> hash to hold our results and iterate over each item in the <code>client_versions</code> array, counting the nodes by version.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># initialize an empty hash to store our final counts grouped by version</span>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># For each item in the client_versions array, create a unique key in our</span>
+</span><span class='line'>  <span class="c1"># number_of_clients_by_version hash and increment our counter</span>
+</span><span class='line'>  <span class="n">client_versions</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">version</span><span class="o">|</span> <span class="n">number_of_clients_by_version</span><span class="o">[</span><span class="n">version</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Thanks to my Talented and Gifted&trade; co-worker <a href="https://twitter.com/moserke">Kevin</a> for <a href="http://stackoverflow.com/questions/569694/count-duplicate-elements-in-ruby-array">this StackOverflow link</a> which explained how to do the group-by version.</p>
+
+<p>So here&rsquo;s the result of the script, which is exactly what we set out to accomplish:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><a href="http://www.youtube.com/watch?v=WEQnzs8wl6E">Fade to Black</a></h2>
+
+<p>So there you have it. We compared two approaches to returning data from the Chef server, with one being an order of magnitude faster. We figured out how to find specific Ohai attribute names, and we created a script to transform the raw data to something truly useful.</p>
+
+<p>These posts seem to keep getting longer, so maybe next week, we&rsquo;ll have something short and sweet. Thanks for reading and I&rsquo;d love to hear your comments.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Creating an LWRP - part 3]]></title>
+    <link href="http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/"/>
+    <updated>2013-01-13T11:38:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on the managed node. We looked at implementing Action methods (<code>:create</code>, <code>:delete</code>), using the <code>load_current_resource</code> method to read in attributes of existing resources, and how to support Chef&rsquo;s <code>why-run</code> mode.</p>
+
+<p>This week, we&rsquo;ll complete the Provider by looking at the <code>port_exists?</code>, <code>create_printer_port</code>, and <code>delete_printer_port</code> methods. The <code>load_current_resource</code> method uses the <code>port_exists?</code> method to determine if the printer port already exists. The latter two methods leverage Windows PowerShell to create and delete printer ports respectively. Collectively, these are the private methods in this class, meant to be called only by the <code>:create</code> and <code>:delete</code> Action methods and <code>load_current_resource</code>.</p>
+
+<!--more-->
+
+
+<h2><a href="http://en.wikipedia.org/wiki/Object-oriented_programming">OOP</a> (<a href="http://en.wikipedia.org/wiki/Whoomp!_(There_It_Is)">there it is</a>)&hellip;</h2>
+
+<p>We&rsquo;ve moved some of the code which might otherwise go into our <code>:create</code> and <code>:delete</code> Action methods into separate methods which create and delete printer ports using PowerShell. Breaking up our methods into smaller, logical chunks follows the Composed Method technique which I first learned about in <a href="http://www.amazon.com/Eloquent-Ruby-Addison-Wesley-Professional/dp/0321584104">Eloquent Ruby</a> by Russ Olsen.</p>
+
+<blockquote><p>&#8220;The composed method technique advocates dividing your class up into methods that have three characteristics. First, each method should do a single thing—focus on solving a single aspect of the problem. By concentrating on one thing, your methods are not only easier to write, they are also easier to understand. </p><p>Second, each method needs to operate at a single conceptual level: Simply put, don’t mix high-level logic with the nitty-gritty details. A method that implements the business logic around, say, currency conversions, should not suddenly veer off into the details of how the various accounts are stored in a database. </p><p>Finally, each method needs to have a name that reflects its purpose.&#8221;</p></blockquote>
+
+
+<p>Olsen, Russ (2011-02-07). <em>Eloquent Ruby</em> (Addison-Wesley Professional Ruby Series) (Kindle Locations 2102-2107). Pearson Education (USA). Kindle Edition.</p>
+
+<h2>The <code>:create</code> action</h2>
+
+<p>Let&rsquo;s look at the <code>:create</code> Action to see how we applied the Composed Method technique.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">action</span> <span class="ss">:create</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2"> already exists - nothing to do.&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Create </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">create_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even without comments it should be pretty clear what this method does; it almost reads like plain English. If the printer port already exists, it logs a message and does nothing, otherwise it creates a printer port. We have made it so readable by extracting out the code which checks for a pre-existing printer port into the <code>load_current_resource</code> method, and the code which creates the printer port into the <code>create_printer_port</code> method.</p>
+
+<p>By composing our <code>:create</code> method this way, it&rsquo;s become a template. You should be able to use the code above for almost any <code>:create</code> Action in any LWRP you will write, just by changing the name of the <code>create_printer_port</code> method to something more suitable.</p>
+
+<p>Now, let&rsquo;s look at the private <code>create_printer_port</code> method, which actually creates the printer port.</p>
+
+<h2><code>create_printer_port</code> method</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_printer_port</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">port_name</span> <span class="o">=</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># create the printer port using PowerShell</span>
+</span><span class='line'>  <span class="n">powershell</span> <span class="s2">&quot;Creating printer port </span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="si">}</span><span class="s2">&quot;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">code</span> <span class="o">&lt;&lt;-</span><span class="no">EOH</span>
+</span><span class='line'>
+</span><span class='line'><span class="sh">      Set-WmiInstance -class Win32_TCPIPPrinterPort `</span>
+</span><span class='line'><span class="sh">        -EnableAllPrivileges `</span>
+</span><span class='line'><span class="sh">        -Argument @{ HostAddress = &quot;#{ new_resource.ipv4_address }&quot;;</span>
+</span><span class='line'><span class="sh">                     Name        = &quot;#{ port_name }&quot;;</span>
+</span><span class='line'><span class="sh">                     Description = &quot;#{ new_resource.port_description }&quot;;</span>
+</span><span class='line'><span class="sh">                     PortNumber  = &quot;#{ new_resource.port_number }&quot;;</span>
+</span><span class='line'><span class="sh">                     Protocol    = &quot;#{ new_resource.port_protocol }&quot;;</span>
+</span><span class='line'><span class="sh">                     SNMPEnabled = &quot;$#{ new_resource.snmp_enabled }&quot;;</span>
+</span><span class='line'><span class="sh">                  }</span>
+</span><span class='line'><span class="no">    EOH</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>create_printer_port</code> method starts off by setting a local variable, <code>port_name</code> which is set to the <code>new_resource.port_name</code> if the user set the <code>port_name</code> attribute, or <code>IP_&lt;ipv4_address&gt;</code> if the user didn&rsquo;t set <code>port_name</code>.</p>
+
+<p>After that, it&rsquo;s just a straightforward PowerShell resource block which creates the printer port using the attributes passed in from the <code>windows_printer_port</code> resource in the Recipe.</p>
+
+<p>One thing to note is how we are using <a href="http://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Literals#Interpolation">Ruby String Interpolation</a> to pass our Resource Attributes in to the PowerShell script.The <code>"#{ new_resource.foo }"</code> sections are how we can pass Ruby variables into a PowerShell or batch script. Pretty handy.</p>
+
+<h2><code>port_exists?</code> method</h2>
+
+<p><code>port_exists?</code> is a simple method which queries the Windows Registry to see if the printer port has already been created. The <code>load_current_resource</code> method calls <code>port_exists?</code>, and if the printer port exists, it sets <code>@current_resource.exists</code> to <code>true</code>.</p>
+
+<p>One thing you should notice is that the question mark is part of the <code>port_exists?</code> method name. In Ruby, it is perfectly acceptable, and expected that methods which return <em>true</em> or <em>false</em> have a <code>?</code> appended to the method name.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">PORTS_REG_KEY</span> <span class="o">=</span> <span class="s1">&#39;HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors\Standard TCP/IP Port\Ports\\&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">port_exists?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">port_reg_key</span> <span class="o">=</span> <span class="no">PORTS_REG_KEY</span> <span class="o">+</span> <span class="nb">name</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Checking to see if this reg key exists: &#39;</span><span class="si">#{</span> <span class="n">port_reg_key</span> <span class="si">}</span><span class="s2">&#39;&quot;</span>
+</span><span class='line'>  <span class="no">Registry</span><span class="o">.</span><span class="n">key_exists?</span><span class="p">(</span><span class="n">port_reg_key</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code block creates a Ruby <a href="http://rubylearning.com/satishtalim/ruby_constants.html">Constant</a>, the <code>PORTS_REG_KEY</code>, which is the key we&rsquo;ll query to determine if the printer port already exists.</p>
+
+<p>In our <code>port_exists?</code> method, we call the Windows Cookbook <a href="https://github.com/opscode-cookbooks/windows#library-methods"><code>Registry.key_exists?</code></a> method which returns <code>true</code> or <code>false</code>, telling us whether the printer port is already in the Windows Registry or not. Notice that <code>?</code> in the method name again?</p>
+
+<h2><code>delete_printer_port</code> method</h2>
+
+<p>The <code>delete_printer_port</code> is much the same as the <code>create_printer_port</code> method so I won&rsquo;t cover it here.</p>
+
+<h2>Wrap-up</h2>
+
+<p>So now we&rsquo;ve completed our look at how to create LWRPs. We&rsquo;ve covered both the Reource and Provider and looked at structuring your Ruby methods using the Composed Methods pattern. Certainly, my printer port LWRP isn&rsquo;t perfect. In writing these blog posts, I&rsquo;ve already come up with some changes to make it better, but the biggest glaring omission is the complete lack of test coverage!</p>
+
+<h2>Next Steps</h2>
+
+<p>We&rsquo;ll probably take a break from LWRPs next week but look for a blog post in the near future on testing LWRPs using my absolute favorite Ruby testing libarary, <a href="http://rspec.info/">RSpec</a>. Huge shout out to <a href="https://twitter.com/jtimberman">Joshua Timberman</a> to whom I&rsquo;m indebted for great example <a href="https://github.com/opscode-cookbooks/runit/commits/CHEF-154">RSpec tests in the Runit</a> cookbook.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Creating an LWRP, part 2: The Provider]]></title>
+    <link href="http://dougireton.github.io/blog/2013/01/07/creating-an-lwrp-part-2/"/>
+    <updated>2013-01-07T14:35:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/01/07/creating-an-lwrp-part-2</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at part one of creating an LWRP &ndash; the Resource. This week, we&rsquo;ll look at part two &ndash; the Provider. We&rsquo;ll look at a real Provider which uses Ruby and PowerShell to create and delete printer ports. Since the Provider code is so long, I&rsquo;ll cover the first half this week, and the second half next week. The first half will cover the <code>:create</code> and <code>:delete</code> Action methods, how to support <code>why_run</code> (dry-run or what-if mode) and how to use the <code>load_current_resource</code> method.</p>
+
+<!--more-->
+
+
+<p>As a reminder, LWRPs eanble you to easily install, create, delete, start, stop or otherwise manipulate resources; things like packages, printers, services, etc. The Resource is a simple interface, an API if you will, which makes it very easy for sysadmins to create Recipes which do a lot of work in a few lines of code.</p>
+
+<h2>The Provider</h2>
+
+<p>The Provider part of an LWRP is the OS-specific code which actually installs, creates, deletes, starts, or stops the resource on the managed node. As we&rsquo;ll see in the example below, Providers are written in Ruby but often use Bash, PowerShell, or command-line utilities to do their work.</p>
+
+<h2>Or maybe <em>Providers</em>&hellip;</h2>
+
+<p>In an LWRP, a given Resource may have more than one Provider. For example the <a href="https://github.com/opscode-cookbooks/windows#windows_feature"><code>windows_feature</code></a> LWRP in the Windows cookbook has two Providers, one for installing features via <a href="http://msdn.microsoft.com/en-us/library/dd371719(v=vs.85).aspx"><code>dism.exe</code></a>, and one for installing features using the older <a href="http://technet.microsoft.com/en-us/library/ee344834(v=ws.10).aspx"><code>servermanagercmd.exe</code></a>.</p>
+
+<h2>Show me the code!</h2>
+
+<p>Continuing our example from last week we&rsquo;ll be looking at the <a href="https://github.com/opscode-cookbooks/windows#windows_printer_port">Windows Printer Port LWRP</a> .</p>
+
+<figure class='code'><figcaption><span>Windows Printer Port Provider</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Support whyrun</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">whyrun_supported?</span>
+</span><span class='line'>  <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">action</span> <span class="ss">:create</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2"> already exists - nothing to do.&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Create </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">create_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">action</span> <span class="ss">:delete</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Delete </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">delete_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@current_resource</span> <span class="si">}</span><span class="s2"> doesn&#39;t exist - can&#39;t delete.&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">load_current_resource</span>
+</span><span class='line'>  <span class="vi">@current_resource</span> <span class="o">=</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Resource</span><span class="o">::</span><span class="no">WindowsPrinterPort</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">port_exists?</span><span class="p">(</span><span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># TODO: Set @current_resource port properties from registry</span>
+</span><span class='line'>    <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># -- SNIP --</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The <code>:create</code> action</h2>
+
+<p>Let&rsquo;s look at the <code>:create</code> action first. We first check if the <code>@current_resource</code> already exists, and if so, we log a message and do nothing. <code>@current_resouce</code> is set to the resource on the managed node if it already exists. So if the printer port we are trying to create already exists, we don&rsquo;t create it again. This is how we acheive idempotency in our LWRP and it&rsquo;s a core tenet of Chef &ndash; don&rsquo;t change a node&rsquo;s state unless it&rsquo;s necessary.</p>
+
+<p>So if our printer port hasn&rsquo;t yet been created, we call the <code>create_printer_port</code> method which actually creates the printer port using Windows a PowerShell cmdlet. We&rsquo;ll look at the <code>create_printer_port</code> method next week. The <code>create_printer_port</code> method call is wrapped in a <code>converge_by</code> block, which is the secret to implementing <a href="http://lists.opscode.com/sympa/arc/chef/2012-07/msg00025.html"><code>why-run</code></a> mode.</p>
+
+<h2>Why-Run</h2>
+
+<p>Why-Run is fairly simple to implement in a Provider. You just need to define a <code>whyrun_supported?</code> method which returns <code>true</code>, and wrap any code which actually makes changes on the managed node in a <code>converge_by</code> block with an appropriate message about what the code would do if you actually converged the node. For example, in our <code>:create</code> action, we wrap the <code>create_printer_port</code> method call in a <code>converge_by</code> block with a log message which says we would have created a printer port.</p>
+
+<p>If you&rsquo;ve looked at Provider code in the past, or have written LWRPs, you have probably seen the <code>new_resource.updated_by_last_action(true)</code> method call in the Provider Actions. This method call supports Notifications. So if the Resource changed, it would <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Keyword:action">notify other resources</a>.</p>
+
+<p>When you implement Why-Run, you don&rsquo;t need to call <code>new_resource.updated_by_last_action(true)</code> because the <code>converge_by</code> block does that for you automatically.</p>
+
+<h2>The <code>load_current_resource</code> method</h2>
+
+<p>The <code>load_current_resource</code> method is proably the hardest to understand how to actually write. Conceptually, it&rsquo;s fairly straighforward. Using the Resource (<code>windows_printer_port</code>) attributes which the user specified in the Recipe, <code>load_current_resource</code> tries to find, on the server, an existing printer port which matches the one we are trying to create. If it finds a match, it sets <code>@current_resource.exists</code> to <code>true</code>. Remember that <a href="http://dougireton.com/blog/2012/12/31/creating-an-lwrp/">last week</a> we created the <code>exists</code> attribute by setting an <code>attr_accessor :exists</code> on our Resource. Now, we get to use it.</p>
+
+<p>You should know that the <code>load_current_resource</code> method is already defined on the <code>Chef::Provider</code> class. You just need to define, or <a href="http://www.rubydoc.info/github/opscode/chef/master/Chef/Provider#load_current_resource-instance_method"><em>override</em></a> the method in your own Provider. Chef will call the <code>load_current_resouce</code> method automatically when it <a href="http://wiki.opscode.com/pages/viewpage.action?pageId=7274964#LightweightResourcesandProviders(LWRP)-Background">iterates over the ResourceCollection during the chef client execution phase</a>.</p>
+
+<h2>Just Gettin&#8217; By&hellip;</h2>
+
+<p>We are just doing the bare minimum in our <code>load_current_resource</code> method. For creating and deleting printer ports, this is probably enough. If we wanted to be able to <em>modify</em> a printer port, we would need to load in all the attributes from the current printer port on the managed node so we would have them available for comparison.</p>
+
+<p>For example, if we wanted to modify an existing printer port to change the <code>snmp_enabled</code> attribute from <code>false</code> to <code>true</code>, we would need to query the existing printer port on the server to see if SNMP was enabled or not, and save that value to <code>@current_resource.snmp_enabled</code> for use later in our <code>:modify</code> action.</p>
+
+<figure class='code'><figcaption><span>load_current_resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">load_current_resource</span>
+</span><span class='line'>  <span class="vi">@current_resource</span> <span class="o">=</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Resource</span><span class="o">::</span><span class="no">WindowsPrinterPort</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">(</span><span class="vi">@new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="vi">@new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">port_exists?</span><span class="p">(</span><span class="vi">@current_resource</span><span class="o">.</span><span class="n">port_name</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># TODO: Set @current_resource port properties from registry</span>
+</span><span class='line'>    <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><code>load_current_resource</code> nuts and bolts</h2>
+
+<p>So for our bare minimum <code>load_current_resource</code> method, we need to set <code>@current_resource</code> to an instance of <code>Chef::Resource::WindowsPrinterPort</code> and copy one or more attributes from the <code>@new_resource</code>, which is passed in from the <code>windows_printer_port</code> Resource in the Recipe. Chef  creates the <code>@new_resource</code> class instance from the attributes in the Recipe and makes it available to the Provider automatically.</p>
+
+<p>In this case, to determine if the printer port already exists, we need to query the Windows Registry using the <code>port_name</code> attribute. The <code>port_name</code> is usually <code>IP_&lt;ipv4_address&gt;</code>, but could could be anthing if the user specified a custom <code>port_name</code> in the Recipe.</p>
+
+<p>So in line 5 above, we set <code>@current_resouce.port_name</code> from <code>@new_resource.port_name</code> if the user specified a custom port name, or we use <code>IP_&lt;ipv4_address&gt;</code> if the user didn&rsquo;t specify a custom port name.</p>
+
+<h2><code>port_exists?</code></h2>
+
+<p>We then call our <code>port_exists?</code> method which queries the Windows Registry and returns <code>true</code> if the port already exists or <code>false</code> if it doesn&rsquo;t. We have a <code># TODO</code> note in our code where we would load in additional printer port attributes from the registry in the future.</p>
+
+<p>Finally, we set our <code>@current_resource.exists</code> attribute to <code>true</code> since we now know that the printer port already exists.</p>
+
+<h2>Summary</h2>
+
+<p>This week we learned how to create the basic skeleton for Action methods (<code>:create</code>, <code>:delete</code>, etc.), how to support <code>why-run</code> mode, and how to use the <code>load_current_resource</code> method to determine if the Resource we are trying to create already exsists on the managed node.</p>
+
+<p>Next week, we&rsquo;ll cover the <code>create_printer_port</code>, and <code>port_exists?</code> private methods which do the real work on the server.</p>
+
+<h2>Feedback</h2>
+
+<p>Do you have any good examples of Providers which do something especially cool? Maybe from an LWRP you wrote? Or have you found Providers challenging to write? I&rsquo;d love to hear your feedback in the comments. Thanks!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Creating an LWRP, part 1: The Resource]]></title>
+    <link href="http://dougireton.github.io/blog/2012/12/31/creating-an-lwrp/"/>
+    <updated>2012-12-31T11:00:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2012/12/31/creating-an-lwrp</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>If you&rsquo;ve written any Chef recipes at all, you&rsquo;ve almost certainly used Lightweight Resources and Providers (LWRPs). LWRPs enable you start/stop services, install packages, manage firewalls, deploy apps and many other common configuration tasks. <a href="http://docs.opscode.com/essentials_cookbook_lwrp.html">LWRPs</a> combine a simple interface (Resource) with one or more usually OS-specific implementations (Providers). For example this resource installs Windows packages:</p>
+
+<figure class='code'><figcaption><span>Windows Package Resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">windows_package</span> <span class="s2">&quot;7-Zip 9.20 (x64 edition)&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;http://downloads.sourceforge.net/sevenzip/7z920-x64.msi&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>windows_package</code> <em>provider</em>, which comes with the Windows cookbook, is 250 lines of code. It handles five different kinds of package types, e.g. msi, inno, nullsoft, etc. LWRPs make it very easy for sysadmins to write Chef recipes with a minimal amount of code because someone has already done the hard work of writing the Resource and Provider.</p>
+
+<p>Even though Opscode has provided many LWRPs &ldquo;out of the box&rdquo;, you will still need to write your own at some point. This week we&rsquo;ll look at how to write an LWRP starting with the Resource part. Next week, we&rsquo;ll complete the two-part series by learning how to write the corresponding Provider.</p>
+
+<!--more-->
+
+
+<h2>Example, please&hellip;</h2>
+
+<p>Your first step should be to determine if the resource you need already exists. Read and bookmark <a href="http://docs.opscode.com/essentials_cookbook_lwrp.html">this page</a>. It provides a good introduction to LWRPs and lists the Opscode provided LWRPs. Don&rsquo;t reinvent the wheel.</p>
+
+<p>Here&rsquo;s an example resource we&rsquo;ll be looking at. It allows you to create Windows TCP/IP printer ports.</p>
+
+<figure class='code'><figcaption><span>Windows Printer Port Resource</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;resolv&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">actions</span> <span class="ss">:create</span><span class="p">,</span> <span class="ss">:delete</span>
+</span><span class='line'><span class="n">default_action</span> <span class="ss">:create</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:ipv4_address</span><span class="p">,</span> <span class="ss">:name_attribute</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="nb">String</span><span class="p">,</span>
+</span><span class='line'>            <span class="ss">:required</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span> <span class="ss">:regex</span> <span class="o">=&gt;</span> <span class="no">Resolv</span><span class="o">::</span><span class="no">IPv4</span><span class="o">::</span><span class="no">Regex</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:port_name</span>       <span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="nb">String</span>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:port_number</span>     <span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="no">Fixnum</span><span class="p">,</span> <span class="ss">:default</span> <span class="o">=&gt;</span> <span class="mi">9100</span>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:port_description</span><span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="nb">String</span>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:snmp_enabled</span>    <span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="o">[</span> <span class="no">TrueClass</span><span class="p">,</span> <span class="no">FalseClass</span> <span class="o">]</span><span class="p">,</span>
+</span><span class='line'>            <span class="ss">:default</span> <span class="o">=&gt;</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">attribute</span> <span class="ss">:port_protocol</span><span class="p">,</span> <span class="ss">:kind_of</span> <span class="o">=&gt;</span> <span class="no">Fixnum</span><span class="p">,</span> <span class="ss">:default</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:equal_to</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">attr_accessor</span> <span class="ss">:exists</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s take it line by line. The first line requires the <code>resolv</code> library, &ldquo;a thread-aware DNS resolver library written in Ruby&rdquo;. It provides a very good IPv4 regex we will use to verify the user has passed in a valid IPv4 address for the <code>:ipv4_address</code> attribute. It&rsquo;s easy to forget, but Resources are just Ruby and you can <code>require</code> libraries and use any other Ruby to help you out.</p>
+
+<p>The next line specifies the allowed actions. Actions are what your resource can do, e.g. start, stop, create, delete, etc. In this case, you can <code>:create</code>, or <code>:delete</code> printer ports.</p>
+
+<p>Line four defines the <code>default_action</code> for our resource, in this case <code>:create</code>. If you don&rsquo;t specify an action when you use the resource in a recipe, it will default to creating a printer port, which is what you probably want. A general philosophy of Chef is to define intelligent or &ldquo;sane&rdquo; defaults.</p>
+
+<p>Lines 6 &ndash; 13 define attributes, or properties of the printer port resource we are creating. Let&rsquo;s look at each of these attributes in turn.</p>
+
+<p>Line 6 defines an <code>:ipv4_address</code> attribute. Its <code>:name_attribute</code> is true, which means that this attribute will be set to the string between <code>windows_printer_port</code> and <code>do</code>:</p>
+
+<figure class='code'><figcaption><span>`name_attribute`</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">windows_printer_port</span> <span class="s2">&quot;This is the name attribute part&quot;</span> <span class="k">do</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">windows_printer_port</span> <span class="s1">&#39;10.2.32.47&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="c1"># The :ipv4_address attribute will be set to &#39;10.2.32.47&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the second example above, the printer_port <code>:ipv4_address</code> attribute wll be set to &lsquo;10.2.32.47&rsquo;.</p>
+
+<p>Also, on line 6, we are definining the <code>kind_of</code> validation parameter to tell the resource which kind of data we should expect (in this case, a string), whether this attribute is required (yes), and setting a validation regex (Resolv::IPv4::Regex). Instead of attempting to write a regex to validate IPv4 addresses, I am using a pre-defined regex supplied by the <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/resolv/rdoc/Resolv/IPv4.html"><code>Resolv</code></a> Ruby library.</p>
+
+<p>Line 8 defines a <code>port_name</code> attribute, which is an optional string with no default. Line 9 defines a <code>port_number</code> attribute, a Ruby Fixnum (i.e. an integer) with a default of 9100, which is the default when you create a printer port in Windows.</p>
+
+<p>Line 10 defines a <code>port_description</code> attribute, an optional string.</p>
+
+<p>Line 11 defines an <code>snmp_enabled</code> attribute, a boolean which defaults to false.</p>
+
+<p>Line 13 defines a <code>port_protocol</code> attribute, a Ruby Fixnum, which defaults to 1. The <code>equal_to</code> constraint limits the possible values to 1 or 2.</p>
+
+<p>It&rsquo;s important to note that the constraints and defaults in the <code>windows_printer_port</code> Resource are very carefully chosen based on knowlege of how the <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa394492(v=vs.11).aspx">Win32_TCPIPPrinterPort</a> class in Windows works. You can&rsquo;t write a Resource and Provider unless you really understand the underlying resource you are modeling.</p>
+
+<p>I&rsquo;ll explain the <code>attr_accessor :exists</code> in more detail next week, but in short, it defines an <code>exists</code> property on the Resource so we can test whether a given printer port already exists, so we don&rsquo;t create it again.</p>
+
+<p>So that&rsquo;s it for this week. Tune in <a href="http://dougireton.com/blog/2013/01/07/creating-an-lwrp-part-2/">next week</a> for an overview of writing Providers.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Automatically upgrading Chef client on Vagrant Up]]></title>
+    <link href="http://dougireton.github.io/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up/"/>
+    <updated>2012-12-23T19:51:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2012/12/23/automatically-upgrading-chef-client-on-vagrant-up</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>If you do enough Vagrant testing, you&rsquo;ll soon run into a Vagrant box with an outdated Chef client. Even the Opscode Test Kitchen boxes come with Chef 10.14.4, not the latest 10.16.2 version. In this post I&rsquo;ll show you how to automatically upgrade the Chef client on <code>vagrant up</code>. The trick is to use two <code>config.vm.provision</code> blocks in your Vagrantfile.</p>
+
+<!--more-->
+
+
+<h2>Download the Opscode Chef-Client cookbook and add an Upgrade recipe</h2>
+
+<p>You&rsquo;ll need a Chef recipe to upgrade your Chef client. Below is a recipe we added to our fork of the <a href="http://community.opscode.com/cookbooks/chef-client">Opscode Chef-Client</a> cookbook.</p>
+
+<figure class='code'><figcaption><span>Chef Client Upgrade Recipe</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># put this in `chef-client/recipes/upgrade.rb`</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">windows_package</span> <span class="s2">&quot;Opscode Chef Client Installer for Windows v10.16.2&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;https://www.opscode.com/chef/install.msi&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We&rsquo;re using Windows in this case but obviously, use the Chef client for your platform. We&rsquo;ve successfully used this pattern with Linux boxes as well.</p>
+
+<h2>In your Vagrantfile</h2>
+
+<figure class='code'><figcaption><span>Vagrantfile</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="ss">:chef_solo</span> <span class="k">do</span> <span class="o">|</span><span class="n">chef</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># this provision block upgrades the Chef Client before the real </span>
+</span><span class='line'>  <span class="c1"># Chef run starts</span>
+</span><span class='line'>  <span class="n">chef</span><span class="o">.</span><span class="n">run_list</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[chef-client::upgrade]&quot;</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># This is the real Chef run</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="ss">:chef_solo</span> <span class="k">do</span> <span class="o">|</span><span class="n">chef</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">chef</span><span class="o">.</span><span class="n">run_list</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[my_recipe]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[my_other_recipe::beer]&quot;</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>OK, but two Chef runs? Really?</h2>
+
+<blockquote><p>&#8220;But, why can&#8217;t you just use a single provision block and add the Chef Client upgrade recipe to the first position in the run list?&#8221;</p></blockquote>
+
+
+<p>That was my question the first time Kevin showed me this pattern. He explained,</p>
+
+<blockquote><p>&#8220;Because, Chef will complete the Chef run with the same version it started with.&#8221;</p></blockquote>
+
+
+<p>In other words, the first Chef run starts with 10.x and upgrades itself. The second Chef run starts with the new, shiny, upgraded client.</p>
+
+<h2>Credit Where Credit is Due</h2>
+
+<p>Once again, mad props to my Talented and Gifted&trade; teammate <a href="https://twitter.com/moserke">Kevin</a> for figuring this out. This really helped us out when we were stuck with a RHEL 5.8 Vagrant box with Chef 10.8 and needed to test Chef recipes written for Chef 10.16.2.</p>
+
+<h2>Ladies and Gentlemen, <code>'vagrant up'</code></h2>
+
+<p>Now everytime, you <code>vagrant destroy</code> and <code>vagrant up</code>, you&rsquo;ll have the latest Chef Client without having to crack open and repackage your Vagrant box. Happy testing and let me know how it works for you.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to include the Windows Cookbook Helper methods in your Chef recipe]]></title>
+    <link href="http://dougireton.github.io/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe/"/>
+    <updated>2012-12-16T20:06:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2012/12/16/how-to-include-the-windows-cookbook-helper-methods-in-your-chef-recipe</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>We&rsquo;ve been writing a lot of Windows Cookbooks and Recipes lately and it&rsquo;s been very helpful to be able to use the helper methods in the Opscode Windows cookbook. In this post I&rsquo;ll show you how to include and use those helper methods. You can generalize this to library methods from any cookbook, even your own cookbooks.</p>
+
+<h2>What are the helper methods?</h2>
+
+<p>The Windows cookbook includes several nice <a href="https://github.com/opscode-cookbooks/windows/tree/master/libraries">helper methods</a> for dealing with windows paths and the registry. Unfortunately, it&rsquo;s not obvious how to use these helper methods in a recipe. At first I tried the standard Ruby <code>require</code> statement in a recipe, but this doesn&rsquo;t work. My Talented and Gifted &trade; teammate Kevin was able to explain why to me, but now I can&rsquo;t remember the reason.</p>
+
+<h2>How do I use them in a recipe?</h2>
+
+<p>Just use <code>::Chef::Recipe.send(:include, Windows::Helper)</code> like this:</p>
+
+<figure class='code'><figcaption><span>::Chef::Recipe.send(:include, Windows::Helper)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># include Windows::Helper from Opscode Windows Cookbook</span>
+</span><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">Windows</span><span class="o">::</span><span class="no">Helper</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># now you can call helper methods like win_friendly_path directly</span>
+</span><span class='line'><span class="n">my_batch_file</span> <span class="o">=</span> <span class="n">win_friendly_path</span><span class="p">(</span>
+</span><span class='line'>                     <span class="o">::</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;cookbook&#39;</span><span class="o">][</span><span class="s1">&#39;batch_dir&#39;</span><span class="o">]</span><span class="p">,</span><span class="s1">&#39;foo.bat&#39;</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">execute</span> <span class="s2">&quot;My batch file&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">command</span> <span class="n">my_batch_file</span>
+</span><span class='line'>  <span class="n">creates</span> <span class="s2">&quot;e:/logs/my_batch_file.log&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<!--more-->
+
+
+<h2>What Else Can I Do?</h2>
+
+<p>You might also want to use <a href="https://github.com/opscode/chef/blob/master/lib/chef/mixin/shell_out.rb">Chef::Mixin::Shellout</a> helper methods, e.g. <code>shell_out!</code>.</p>
+
+<figure class='code'><figcaption><span>Chef::Mixin::Shellout</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># include Chef::Mixin::Shellout</span>
+</span><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">Chef</span><span class="o">::</span><span class="no">Mixin</span><span class="o">::</span><span class="no">ShellOut</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># later in your code ...</span>
+</span><span class='line'><span class="n">output</span> <span class="o">=</span> <span class="n">shell_out!</span> <span class="n">my_cmd</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Output: </span><span class="si">#{</span> <span class="n">output</span><span class="o">.</span><span class="n">stdout</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Errors: </span><span class="si">#{</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span> <span class="si">}</span><span class="s2">&quot;</span> <span class="k">unless</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">empty?</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Creating your own helper methods</h2>
+
+<p>You can also use this pattern in your own cookbooks. If you have common methods you find yourself using over and over, you should put them into a file in the <code>libraries</code> directory in your cookbook.</p>
+
+<p>Create a helper.rb inside the cookbook/libraries folder:</p>
+
+<figure class='code'><figcaption><span>Creating your own helpers</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">CookbookName</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Helper</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">my_helper_method</span><span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">)</span>
+</span><span class='line'>      <span class="c1"># your code here</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then use your helper like this:</p>
+
+<figure class='code'><figcaption><span>How to use your helper</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">::</span><span class="no">Chef</span><span class="o">::</span><span class="no">Recipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:include</span><span class="p">,</span> <span class="no">CookbookName</span><span class="o">::</span><span class="no">Helper</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">output</span> <span class="o">=</span> <span class="n">my_helper_method</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So, now you can use helper methods in your own cookbooks for fun and profit. Let me know in the comments if you are using this pattern other patterns for including cookbook helpers.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Creating a git pre-commit hook for Chef cookbooks]]></title>
+    <link href="http://dougireton.github.io/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/"/>
+    <updated>2012-12-10T21:02:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks</id>
+    <content type="html"><![CDATA[<p>We&rsquo;ve been using Chef in our group now for a few months, but until now we haven&rsquo;t been serious about linting or testing our Chef cookbooks. I decided to get serious today and write a Git pre-commit <a href="http://git-scm.com/docs/githooks">hook</a> for linting cookboks.</p>
+
+<p>Git runs the pre-commit hook script before each commit. This allows you to run code quality checks so only clean code is committed to your repo.</p>
+
+<p>It&rsquo;s important to note that git hooks aren&rsquo;t copied down when you clone a git repo. Each developer will need to create his or her own pre-commit hook script in the .git/hooks/ directory of the repo. If you wanted to get fancy, you could keep git hook scripts in a &ldquo;utility&rdquo; repo and have a rake script to copy them to the right location.</p>
+
+<p>The pre-commit script below does four things:</p>
+
+<ol>
+<li>Runs a built-in Git whitespace check for trailing whitespace, mixed tabs and spaces, etc.</li>
+<li>Runs <a href="http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test">&lsquo;knife cookbook test&rsquo;</a> to check Ruby and ERB template syntax.</li>
+<li>Runs <a href="https://github.com/turboladen/tailor">&lsquo;tailor&rsquo;</a> to check your code against Ruby style conventions.</li>
+<li>Runs <a href="http://acrmp.github.com/foodcritic/">&lsquo;foodcritic&rsquo;</a>, the de facto Chef cookbook linting tool.</li>
+</ol>
+
+
+<!--more-->
+
+
+
+
+<figure class='code'><figcaption><span> (pre-commit)</span> <a href='http://dougireton.github.io/downloads/code/chef/pre-commit'>download</a></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># check for whitespace errors</span>
+</span><span class='line'><span class="n">git_ws_check</span> <span class="o">=</span> <span class="sb">`git diff-index --check --cached HEAD --`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">git_ws_check</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">COOKBOOK_PATH</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">split</span> <span class="sb">`git rev-parse --show-toplevel`</span>
+</span><span class='line'><span class="no">PARENT_PATH</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class='line'><span class="no">COOKBOOK_NAME</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">chomp</span> <span class="c1"># remove trailing newline</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running knife cookbook test...&#39;</span>
+</span><span class='line'><span class="n">knife_output</span> <span class="o">=</span> <span class="sb">`knife cookbook test </span><span class="si">#{</span> <span class="no">COOKBOOK_NAME</span> <span class="si">}</span><span class="sb"> -o </span><span class="si">#{</span> <span class="no">PARENT_PATH</span> <span class="si">}</span><span class="sb"> -c ~/chef/wit/chef-repo/.chef/knife.rb`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">knife_output</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running tailor...&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Get the file names of (A)dded, (C)opied, (M)odified Ruby files </span>
+</span><span class='line'><span class="no">STAGED_FILES</span> <span class="o">=</span> <span class="sb">`git diff-index --name-only --diff-filter=ACM HEAD -- &#39;*.rb&#39;`</span>
+</span><span class='line'><span class="no">STAGED_FILES</span><span class="o">.</span><span class="n">lines</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">file</span><span class="o">.</span><span class="n">chomp!</span> <span class="c1"># remove carriage returns</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">file</span>
+</span><span class='line'>    <span class="n">tailor_output</span> <span class="o">=</span> <span class="sb">`tailor --max-line-length 999 </span><span class="si">#{</span> <span class="n">file</span> <span class="si">}</span><span class="sb">`</span>
+</span><span class='line'>    <span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="n">tailor_output</span>
+</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Running foodcritic...&quot;</span>
+</span><span class='line'><span class="n">fc_output</span> <span class="o">=</span> <span class="sb">`foodcritic --epic-fail any </span><span class="si">#{</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">PARENT_PATH</span><span class="p">,</span> <span class="no">COOKBOOK_NAME</span><span class="p">)</span> <span class="si">}</span><span class="sb">`</span>
+</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">fc_output</span>
+</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>But, how do I use it?</h2>
+
+<p>Just copy the script below to file named &lsquo;pre-commit&rsquo;, make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.</p>
+
+<h2>Wait a minute! It&rsquo;s not robust!</h2>
+
+<p>You may have noticed that the script needs a few things. It should check for the existence of various binaries (knife, foodcritic, tailor) before calling them. I&rsquo;m sure you could think of many more improvents. I welcome your comments or gist forks. I just had to move on to more pressing things.</p>
+
+<p>Thanks for reading and I welcome constructive comments&hellip;</p>
+]]></content>
+  </entry>
+  
+</feed>

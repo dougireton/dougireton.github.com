@@ -1,0 +1,377 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>ruby -p -i -e - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="This week we&rsquo;ll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables. &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Ruby -p -i -e</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-24T21:28:00-07:00" pubdate data-updated="true">Mar 24<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>This week we&rsquo;ll look at a practical example of combining a simple shell script with a Ruby one-liner to set and unset environment variables.</p>
+
+<h2><a href="http://www.youtube.com/watch?v=bKK-KLDlm20">The Tragic Backstory</a></h2>
+
+<p>At work, we have to go through a proxy server to get to the Internet. To use git, curl, etc. I have to set my <code>http(s)_proxy</code> environment varables. At home I have to unset them since I don&rsquo;t have a proxy at home. Editing my .zshenv twice a day got pretty tedious so I decided to script it.</p>
+
+<p>At first I tried using sed but after trying for an hour to understand how to write a simple sed script, I opted for Ruby. As it turns out, Ruby has very good support for line-editing and substitution.</p>
+
+<!--more-->
+
+
+<h2>The Problem</h2>
+
+<p>Here are the first two lines of my <code>.zshenv</code> file with the relevant proxy variables:</p>
+
+<figure class='code'><figcaption><span>.zshenv</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">http_proxy</span><span class="o">=</span><span class="s2">&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">https_proxy</span><span class="o">=</span><span class="s2">&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># --- &lt;snip&gt; ---</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My script needed to be able to comment out only those two lines, like this:</p>
+
+<figure class='code'><figcaption><span>.zshenv with proxy lines commented</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># export http_proxy=&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'><span class="c"># export https_proxy=&quot;http://proxy.example.com:80&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># --- &lt;snip&gt; ---</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The solution &ndash; <a href="http://www.crumblycookie.net/2012/06/16/strawberry-rhubarb-pie/">Delicious PIE</a></h2>
+
+<p>Ruby has many command line options (type <code>ruby -h</code> to see them), but three are particularly relevant to solving this problem. The first one is <code>-i</code>, which means edit in place instead of making a copy. The next one is <code>-p</code>, which makes Ruby &ldquo;print&rdquo;, or iterate over each line of your input file so your script can act on each line. Basically it saves you the trouble of reading in the file and creating a line interator. Pretty handy. Finally, the <code>-e</code> allows you to pass a one-line Ruby script to <code>ruby</code>.</p>
+
+<p>All together, these options allow you to read in an input file, interate over each line (<code>-p</code>), edit in place (<code>-i</code>), and execute a one-line script (<code>-e</code>) against each line.</p>
+
+<figure class='code'><figcaption><span>noproxy.sh script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Comment out lines beginning with &quot;export http(s)_proxy&quot;</span>
+</span><span class='line'><span class="c"># This will set no proxy</span>
+</span><span class='line'>ruby -i -pe <span class="s2">&quot;gsub /^export https{0,1}_proxy=/, &#39;# \0&#39;&quot;</span> ~/.zshenv
+</span><span class='line'>
+</span><span class='line'><span class="nb">source</span> ~/.zshenv
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Above is the script to comment out <code>http(s)_proxy</code> lines for when I&rsquo;m not at work. The Ruby one-liner is a gsub which finds lines beginning with <code>http_proxy</code> or <code>https_proxy</code> and prepends a comment char (#) before the entire match, represented with <code>\0</code>.</p>
+
+<figure class='code'><figcaption><span>proxy.sh script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Uncomment lines beginning with &quot;export http(s)_proxy&quot;</span>
+</span><span class='line'><span class="c"># This will set a proxy</span>
+</span><span class='line'>ruby -i -pe <span class="s2">&quot;gsub /^# (export https{0,1}_proxy=)/, &#39;\1&#39;&quot;</span> ~/.zshenv
+</span><span class='line'>
+</span><span class='line'><span class="nb">source</span> ~/.zshenv
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is the script to uncomment the <code>http(s)_proxy</code> lines for when I&rsquo;m working for the man. It&rsquo;s quite similar to the script above but replaces the <code>http(s)_proxy</code> lines with the <code>\1</code> reference which matches the part of the match in parenthesis.</p>
+
+<p>By making this script executable, and putting it in my <code>~/bin</code> directory, I can just run <code>proxy.sh</code> to set my proxy, and <code>noproxy.sh</code> to unset my proxy. The script automatically re-sources my <code>.zshenv</code> so I don&rsquo;t have to close and reopen my terminal.</p>
+
+<h2>The 80/20 Rule</h2>
+
+<p>All in all I&rsquo;m pretty happy with my solution. It&rsquo;s not perfect. I&rsquo;d really like to automatically run when I switch Mac network Locations, but for now it&rsquo;s making my life easier with only one line of Ruby. It gets me at least 80% of the way there and I&rsquo;m happy to stop bike shedding it for now.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So, with the help of Ruby&rsquo;s command-line options, we learned how to write a simple shell script to gsub lines in a text file using a Ruby one-liner. Ruby&rsquo;s command-line options are pretty handy, check them out with <code>ruby -h</code>.</p>
+
+<p>For even more Ruby one-liners, check out <a href="http://benoithamelin.tumblr.com/post/10945200630/text-processing-1liners-ruby-vs-awk">&ldquo;Text processing one-liners: Ruby vs. Awk&rdquo;</a>, and <a href="http://benoithamelin.tumblr.com/ruby1line/">&ldquo;Ruby one-liners&rdquo;</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-24T21:28:00-07:00" pubdate data-updated="true">Mar 24<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/03/17/a-knife-dot-rb-for-our-time/" title="Previous Post: A knife.rb for our time">&laquo; A knife.rb for our time</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/03/31/chef-wanted-apply-within/" title="Next Post: Chef wanted. Apply within">Chef wanted. Apply within &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/03/24/ruby-p-i-e/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

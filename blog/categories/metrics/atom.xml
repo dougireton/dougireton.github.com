@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: metrics, | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/blog/categories/metrics/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Send application deploy times to StatsD in a Chef recipe]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe/"/>
+    <updated>2013-03-02T14:48:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/02/send-application-deploy-times-to-statsd-in-a-chef-recipe</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>This week, I&rsquo;ll show you how to time application deploys (or anything else) inside a Chef recipe and send metrics to <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">StatsD</a>.</p>
+
+<p>At work, we&rsquo;re working to integrate metrics into more and more aspects of our development pipeline. We are already sending Chef run data to Graphite and <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Chef client version metrics</a> to StatsD/Graphite. This past week, I worked on timing our application deploys via the <a href="https://github.com/reinh/statsd">Statsd-Ruby</a> library inside a Chef recipe. Read on to see how easy it is.</p>
+
+<!--more-->
+
+
+<h2>Deploy Recipe Part One &ndash; Require StatsD</h2>
+
+<p>```ruby
+GEM_SERVER = node[&lsquo;gem_server&rsquo;]</p>
+
+<p>chef_gem &lsquo;statsd-ruby&rsquo; do
+version &lsquo;1.2.0&rsquo;
+options(&ldquo;&mdash;clear-sources &mdash;source #{GEM_SERVER}&rdquo;)
+end</p>
+
+<p>require &lsquo;statsd&rsquo;
+```</p>
+
+<p>We use an internal Gem server, since our servers are behind firewalls without open access to the Internet. The first part of our app deployment recipe just gets the <code>statsd-ruby</code> gem installed and ready.</p>
+
+<h2>Deploy Recipe Part Two &ndash; Start the Timer</h2>
+
+<p>```ruby</p>
+
+<p>statsd = Statsd.new(&lsquo;mystatsd-server.example.com&rsquo;, 8125)</p>
+
+<p>ruby_block &lsquo;Start of app deployment&rsquo; do
+  block do</p>
+
+<pre><code># start the timer
+node.run_state['app_deploy_start'] = Time.now
+Chef::Log.info "Starting app deploy at #{node.run_state['app_deploy_start']}"
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>In this section of our deply recipe, we initialize a new StatsD server variable and save our app deploy start time in a <code>node.run_state</code> variable. I had trouble getting local variables to work for saving the start time for use later so I ended up using Chef&rsquo;s <code>node.run_state</code> to save the start time. Big thanks to <a href="https://twitter.com/hippiehacker">Chris McClimans</a> for this solution.</p>
+
+<h2>Deploy Recipe Part Three &ndash; Send Elapsed Time to StatsD</h2>
+
+<p>```ruby</p>
+
+<h1>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</h1>
+
+<h1>Insert Chef resources here needed to deploy the app to our web sever</h1>
+
+<h1>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</h1>
+
+<p>execute &ldquo;Deploy the app&rdquo; do
+  # &hellip;
+end</p>
+
+<p>ruby_block &ldquo;End of app deployment&rdquo; do
+  block do</p>
+
+<pre><code># calculate elapsed time for deployment and send to StatsD
+deploy_end = Time.now
+elapsed_time = deploy_end - node.run_state['app_deploy_start']
+
+# Replace "." with underscores in node name so Graphite doesn't create
+# a bucket for each part of the FQDN
+node_name_underscores = node.name.gsub('.', '_')
+
+# Use `statsd-ruby` timing method to send data to StatsD
+statsd.timing "my_app.#{node.chef_environment}.#{node_name_underscores}.deploy_time", elapsed_time
+Chef::Log.info "App deployment took #{elapsed_time} seconds."
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>```</p>
+
+<p>In the final part of our recipe, we do the actual deploy (not shown), then calculate the elapsed time and send to StatsD in a final Ruby block resource. We have to use a <code>ruby_block</code> resource because that will ensure the timing code is run at <a href="http://wiki.opscode.com/display/chef/Anatomy+of+a+Chef+Run">Convege time instead of earlier in Compile time</a>.</p>
+
+<h2>Results</h2>
+
+<div>
+<img class="left" src="/images/app_deploy_times.png" width="800" height="600" title="'App Deploy Times'" >
+</div>
+
+
+<p>As you can see, our app is deploying in roughly 100 seconds. Although we are just starting out with tracking &ldquo;all the things&rdquo;, it&rsquo;s pretty addicting once you get started.</p>
+
+<p>Hopefully you&rsquo;ve seen this week how easy it is to send metrics to StatsD/Graphite from inside a Chef recipe. I&rsquo;d love to hear in the comments what kind of stats you are tracking. Thanks for reading.</p>
+
+<p>Finally, I&rsquo;d be remiss if I didn&rsquo;t point to the blog post which got us started down the metrics road, Etsy&rsquo;s <a href="http://codeascraft.etsy.com/2010/12/08/track-every-release/">&ldquo;Tracking Every Release&rdquo;</a></p>
+]]></content>
+  </entry>
+  
+</feed>

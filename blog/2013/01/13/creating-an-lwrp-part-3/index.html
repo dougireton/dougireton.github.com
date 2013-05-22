@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Creating an LWRP - part 3 - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Creating an LWRP - Part 3</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-13T11:38:00-08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>Last week, we started looking at how to create the Provider part of the LWRP, the code which creates, deletes, or changes the Resource on the managed node. We looked at implementing Action methods (<code>:create</code>, <code>:delete</code>), using the <code>load_current_resource</code> method to read in attributes of existing resources, and how to support Chef&rsquo;s <code>why-run</code> mode.</p>
+
+<p>This week, we&rsquo;ll complete the Provider by looking at the <code>port_exists?</code>, <code>create_printer_port</code>, and <code>delete_printer_port</code> methods. The <code>load_current_resource</code> method uses the <code>port_exists?</code> method to determine if the printer port already exists. The latter two methods leverage Windows PowerShell to create and delete printer ports respectively. Collectively, these are the private methods in this class, meant to be called only by the <code>:create</code> and <code>:delete</code> Action methods and <code>load_current_resource</code>.</p>
+
+<!--more-->
+
+
+<h2><a href="http://en.wikipedia.org/wiki/Object-oriented_programming">OOP</a> (<a href="http://en.wikipedia.org/wiki/Whoomp!_(There_It_Is)">there it is</a>)&hellip;</h2>
+
+<p>We&rsquo;ve moved some of the code which might otherwise go into our <code>:create</code> and <code>:delete</code> Action methods into separate methods which create and delete printer ports using PowerShell. Breaking up our methods into smaller, logical chunks follows the Composed Method technique which I first learned about in <a href="http://www.amazon.com/Eloquent-Ruby-Addison-Wesley-Professional/dp/0321584104">Eloquent Ruby</a> by Russ Olsen.</p>
+
+<blockquote><p>&#8220;The composed method technique advocates dividing your class up into methods that have three characteristics. First, each method should do a single thing—focus on solving a single aspect of the problem. By concentrating on one thing, your methods are not only easier to write, they are also easier to understand. </p><p>Second, each method needs to operate at a single conceptual level: Simply put, don’t mix high-level logic with the nitty-gritty details. A method that implements the business logic around, say, currency conversions, should not suddenly veer off into the details of how the various accounts are stored in a database. </p><p>Finally, each method needs to have a name that reflects its purpose.&#8221;</p></blockquote>
+
+
+<p>Olsen, Russ (2011-02-07). <em>Eloquent Ruby</em> (Addison-Wesley Professional Ruby Series) (Kindle Locations 2102-2107). Pearson Education (USA). Kindle Edition.</p>
+
+<h2>The <code>:create</code> action</h2>
+
+<p>Let&rsquo;s look at the <code>:create</code> Action to see how we applied the Composed Method technique.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">action</span> <span class="ss">:create</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@current_resource</span><span class="o">.</span><span class="n">exists</span>
+</span><span class='line'>    <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">info</span> <span class="s2">&quot;</span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2"> already exists - nothing to do.&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">converge_by</span><span class="p">(</span><span class="s2">&quot;Create </span><span class="si">#{</span> <span class="vi">@new_resource</span> <span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">create_printer_port</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even without comments it should be pretty clear what this method does; it almost reads like plain English. If the printer port already exists, it logs a message and does nothing, otherwise it creates a printer port. We have made it so readable by extracting out the code which checks for a pre-existing printer port into the <code>load_current_resource</code> method, and the code which creates the printer port into the <code>create_printer_port</code> method.</p>
+
+<p>By composing our <code>:create</code> method this way, it&rsquo;s become a template. You should be able to use the code above for almost any <code>:create</code> Action in any LWRP you will write, just by changing the name of the <code>create_printer_port</code> method to something more suitable.</p>
+
+<p>Now, let&rsquo;s look at the private <code>create_printer_port</code> method, which actually creates the printer port.</p>
+
+<h2><code>create_printer_port</code> method</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_printer_port</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">port_name</span> <span class="o">=</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="o">||</span> <span class="s2">&quot;IP_</span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">ipv4_address</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># create the printer port using PowerShell</span>
+</span><span class='line'>  <span class="n">powershell</span> <span class="s2">&quot;Creating printer port </span><span class="si">#{</span> <span class="n">new_resource</span><span class="o">.</span><span class="n">port_name</span> <span class="si">}</span><span class="s2">&quot;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">code</span> <span class="o">&lt;&lt;-</span><span class="no">EOH</span>
+</span><span class='line'>
+</span><span class='line'><span class="sh">      Set-WmiInstance -class Win32_TCPIPPrinterPort `</span>
+</span><span class='line'><span class="sh">        -EnableAllPrivileges `</span>
+</span><span class='line'><span class="sh">        -Argument @{ HostAddress = &quot;#{ new_resource.ipv4_address }&quot;;</span>
+</span><span class='line'><span class="sh">                     Name        = &quot;#{ port_name }&quot;;</span>
+</span><span class='line'><span class="sh">                     Description = &quot;#{ new_resource.port_description }&quot;;</span>
+</span><span class='line'><span class="sh">                     PortNumber  = &quot;#{ new_resource.port_number }&quot;;</span>
+</span><span class='line'><span class="sh">                     Protocol    = &quot;#{ new_resource.port_protocol }&quot;;</span>
+</span><span class='line'><span class="sh">                     SNMPEnabled = &quot;$#{ new_resource.snmp_enabled }&quot;;</span>
+</span><span class='line'><span class="sh">                  }</span>
+</span><span class='line'><span class="no">    EOH</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>create_printer_port</code> method starts off by setting a local variable, <code>port_name</code> which is set to the <code>new_resource.port_name</code> if the user set the <code>port_name</code> attribute, or <code>IP_&lt;ipv4_address&gt;</code> if the user didn&rsquo;t set <code>port_name</code>.</p>
+
+<p>After that, it&rsquo;s just a straightforward PowerShell resource block which creates the printer port using the attributes passed in from the <code>windows_printer_port</code> resource in the Recipe.</p>
+
+<p>One thing to note is how we are using <a href="http://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Literals#Interpolation">Ruby String Interpolation</a> to pass our Resource Attributes in to the PowerShell script.The <code>"#{ new_resource.foo }"</code> sections are how we can pass Ruby variables into a PowerShell or batch script. Pretty handy.</p>
+
+<h2><code>port_exists?</code> method</h2>
+
+<p><code>port_exists?</code> is a simple method which queries the Windows Registry to see if the printer port has already been created. The <code>load_current_resource</code> method calls <code>port_exists?</code>, and if the printer port exists, it sets <code>@current_resource.exists</code> to <code>true</code>.</p>
+
+<p>One thing you should notice is that the question mark is part of the <code>port_exists?</code> method name. In Ruby, it is perfectly acceptable, and expected that methods which return <em>true</em> or <em>false</em> have a <code>?</code> appended to the method name.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">PORTS_REG_KEY</span> <span class="o">=</span> <span class="s1">&#39;HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors\Standard TCP/IP Port\Ports\\&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">port_exists?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">port_reg_key</span> <span class="o">=</span> <span class="no">PORTS_REG_KEY</span> <span class="o">+</span> <span class="nb">name</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">Chef</span><span class="o">::</span><span class="no">Log</span><span class="o">.</span><span class="n">debug</span> <span class="s2">&quot;Checking to see if this reg key exists: &#39;</span><span class="si">#{</span> <span class="n">port_reg_key</span> <span class="si">}</span><span class="s2">&#39;&quot;</span>
+</span><span class='line'>  <span class="no">Registry</span><span class="o">.</span><span class="n">key_exists?</span><span class="p">(</span><span class="n">port_reg_key</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code block creates a Ruby <a href="http://rubylearning.com/satishtalim/ruby_constants.html">Constant</a>, the <code>PORTS_REG_KEY</code>, which is the key we&rsquo;ll query to determine if the printer port already exists.</p>
+
+<p>In our <code>port_exists?</code> method, we call the Windows Cookbook <a href="https://github.com/opscode-cookbooks/windows#library-methods"><code>Registry.key_exists?</code></a> method which returns <code>true</code> or <code>false</code>, telling us whether the printer port is already in the Windows Registry or not. Notice that <code>?</code> in the method name again?</p>
+
+<h2><code>delete_printer_port</code> method</h2>
+
+<p>The <code>delete_printer_port</code> is much the same as the <code>create_printer_port</code> method so I won&rsquo;t cover it here.</p>
+
+<h2>Wrap-up</h2>
+
+<p>So now we&rsquo;ve completed our look at how to create LWRPs. We&rsquo;ve covered both the Reource and Provider and looked at structuring your Ruby methods using the Composed Methods pattern. Certainly, my printer port LWRP isn&rsquo;t perfect. In writing these blog posts, I&rsquo;ve already come up with some changes to make it better, but the biggest glaring omission is the complete lack of test coverage!</p>
+
+<h2>Next Steps</h2>
+
+<p>We&rsquo;ll probably take a break from LWRPs next week but look for a blog post in the near future on testing LWRPs using my absolute favorite Ruby testing libarary, <a href="http://rspec.info/">RSpec</a>. Huge shout out to <a href="https://twitter.com/jtimberman">Joshua Timberman</a> to whom I&rsquo;m indebted for great example <a href="https://github.com/opscode-cookbooks/runit/commits/CHEF-154">RSpec tests in the Runit</a> cookbook.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-13T11:38:00-08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/lwrp/'>LWRP</a>, <a class='category' href='/blog/categories/chef/'>chef,</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/01/07/creating-an-lwrp-part-2/" title="Previous Post: Creating an LWRP, part 2: The Provider">&laquo; Creating an LWRP, part 2: The Provider</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/01/19/get-chef-clients-by-version/" title="Next Post: Get Chef Clients by version">Get Chef Clients by version &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/01/13/creating-an-lwrp-part-3/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

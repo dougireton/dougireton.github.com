@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>A knife.rb for our time - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! The basic knife.rb you get from the Chef server works, but it&rsquo;s not suitable to check into version control or share with your team &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">A knife.rb for Our Time</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-17T20:44:00-07:00" pubdate data-updated="true">Mar 17<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>The basic knife.rb you get from the Chef server works, but it&rsquo;s not suitable to check into version control or share with your team. It has the name of your .pem file hardcoded into it and isn&rsquo;t flexible enough for team use. This week we&rsquo;ll look at a generic, flexible <code>knife.rb</code> you can keep in your <code>chef-repo</code> and share with your team.</p>
+
+<!--more-->
+
+
+<h2>What you get out of the box</h2>
+
+<p>Here&rsquo;s the knife.rb you&rsquo;ll get if you ask the Chef server to generate one for you:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">current_dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">log_level</span>                <span class="ss">:info</span>
+</span><span class='line'><span class="n">log_location</span>             <span class="no">STDOUT</span>
+</span><span class='line'><span class="n">node_name</span>                <span class="s2">&quot;my_username&quot;</span>
+</span><span class='line'><span class="n">client_key</span>               <span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/my_username.pem&quot;</span>
+</span><span class='line'><span class="n">validation_client_name</span>   <span class="s2">&quot;my_org-validator&quot;</span>
+</span><span class='line'><span class="n">validation_key</span>           <span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/my_org-validator.pem&quot;</span>
+</span><span class='line'><span class="n">chef_server_url</span>          <span class="s2">&quot;https://chefserver.example.com/organizations/my_org&quot;</span>
+</span><span class='line'><span class="n">cache_type</span>               <span class="s1">&#39;BasicFile&#39;</span>
+</span><span class='line'><span class="n">cache_options</span><span class="p">(</span> <span class="ss">:path</span> <span class="o">=&gt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOME&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">/.chef/checksums&quot;</span> <span class="p">)</span>
+</span><span class='line'><span class="n">cookbook_path</span>            <span class="o">[</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/../cookbooks&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>A Better Implementation</h2>
+
+<p>Here&rsquo;s what we&rsquo;ve come up with after lots of tinkering. It works on Windows and Mac/Linux. Put this in your <code>chef-repo/.chef/</code> directory and check it into source control.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">current_dir</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">user_email</span>  <span class="o">=</span> <span class="sb">`git config --get user.email`</span>
+</span><span class='line'><span class="n">home_dir</span>    <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOME&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;HOMEDRIVE&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="n">org</span>         <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;chef_org&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="s1">&#39;my_org&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">knife_override</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/knife_override.rb&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">chef_server_url</span>          <span class="s2">&quot;https://chefserver.example.com/organizations/</span><span class="si">#{</span><span class="n">org</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="n">log_level</span>                <span class="ss">:info</span>
+</span><span class='line'><span class="n">log_location</span>             <span class="no">STDOUT</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># USERNAME is UPPERCASE in Windows, but lowercase in the Chef server,</span>
+</span><span class='line'><span class="c1"># so `downcase` it.</span>
+</span><span class='line'><span class="n">node_name</span>                <span class="p">(</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;USER&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;USERNAME&#39;</span><span class="o">]</span> <span class="p">)</span><span class="o">.</span><span class="n">downcase</span>
+</span><span class='line'><span class="n">client_key</span>               <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/</span><span class="si">#{</span><span class="n">node_name</span><span class="si">}</span><span class="s2">.pem&quot;</span>
+</span><span class='line'><span class="n">cache_type</span>               <span class="s1">&#39;BasicFile&#39;</span>
+</span><span class='line'><span class="n">cache_options</span><span class="p">(</span> <span class="ss">:path</span> <span class="o">=&gt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">home_dir</span><span class="si">}</span><span class="s2">/.chef/checksums&quot;</span> <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># We keep our cookbooks in separate repos under a ~/chef/cookbooks dir</span>
+</span><span class='line'><span class="n">cookbook_path</span>            <span class="o">[</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">current_dir</span><span class="si">}</span><span class="s2">/../../../cookbooks&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="n">cookbook_copyright</span>       <span class="s2">&quot;Your Company, Inc.&quot;</span>
+</span><span class='line'><span class="n">cookbook_license</span>         <span class="s2">&quot;none&quot;</span>
+</span><span class='line'><span class="n">cookbook_email</span>           <span class="s2">&quot;</span><span class="si">#{</span><span class="n">user_email</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">http_proxy</span>               <span class="s2">&quot;http://webproxy.example.com:80&quot;</span>
+</span><span class='line'><span class="n">https_proxy</span>              <span class="s2">&quot;http://webproxy.example.com:80&quot;</span>
+</span><span class='line'><span class="n">no_proxy</span>                 <span class="s2">&quot;localhost, 10.*, *.example.com, *.dev.example.com&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Allow overriding values in this knife.rb</span>
+</span><span class='line'><span class="ss">Chef</span><span class="p">:</span><span class="ss">:Config</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">knife_override</span><span class="p">)</span> <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">knife_override</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>The Goods</h2>
+
+<p>Most of this should be self-explanitory, but there are a couple of interesting things to note. We are getting the user&rsquo;s email from git config on the fly. We use this to set the <code>cookbook_email</code> attribute so it&rsquo;s automatically populated when you create a new cookbook. On line three, we are getting the Home directory which is <code>HOME</code> on Mac and <code>HOMEDRIVE</code> on Windows. On line four, we are getting the <code>org</code> variable. It will default to <code>my_org</code>, but allows you to override it by setting the <code>chef_org</code> environment variable.</p>
+
+<h2>Knife Override</h2>
+
+<p>On line six, we are setting the path to a <code>knife_override.rb</code> file. We source the file at the end of this <code>knife.rb</code> so you can override any values specified in this <code>knife.rb</code>. So far we&rsquo;ve never used it, but it seemed like a good idea at the time.</p>
+
+<h2>Client keys</h2>
+
+<p>On line 14 we are setting the <code>node_name</code> which is your Chef server username. On Mac/Linux, your username is stored in the <code>USER</code> env variable. On Windows, it&rsquo;s <code>USERNAME</code>. Windows usually stores your username in UPPERCASE. We downcase it here since Chef server usernames are lowercase.</p>
+
+<p>On line 15, we are specifying the location of the user&rsquo;s Chef client key (.pem file). We store it in our home directories since we use the same client key for mulitple orgs.</p>
+
+<h2>Proxies, etc</h2>
+
+<p>The rest of the file is pretty straightforward. We use a proxy server at work, so we specify proxy settings. Finally, we source our <code>knife_override.rb</code> if it exists.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So there you have it. We use this same <code>knife.rb</code> in all our <code>chef-repos</code> and check it into version control. When someone wants to use our repo, they just check it out of Git and they can start using knife immediately. The only other step they have to do is to move their client key (username.pem file) to <code>~/.chef/</code>.</p>
+
+<p>I&rsquo;d be remiss if I didn&rsquo;t point out Joshua Timberman&rsquo;s excellent <a href="https://gist.github.com/jtimberman/1718805">&ldquo;Commented knife.rb for all the things&rdquo;</a>. Lot&rsquo;s of good ideas in there too.</p>
+
+<p>Let me know any cool tricks you&rsquo;re using in your <code>knife.rb</code>. Thanks and see you next week!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-17T20:44:00-07:00" pubdate data-updated="true">Mar 17<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef,</a>, <a class='category' href='/blog/categories/knife/'>knife</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/03/07/flip-your-unicorn/" title="Previous Post: Flip your unicorn!">&laquo; Flip your unicorn!</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/03/24/ruby-p-i-e/" title="Next Post: ruby -p -i -e">ruby -p -i -e &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

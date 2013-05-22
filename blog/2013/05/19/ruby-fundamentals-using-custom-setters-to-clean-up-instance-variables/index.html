@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Ruby Fundamentals: Using Custom Setters to clean up Instance Variables - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Fellow Rubyists! This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Ruby Fundamentals: Using Custom Setters to Clean Up Instance Variables</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-19T21:56:00-07:00" pubdate data-updated="true">May 19<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Fellow Rubyists!</p>
+
+<p>This week we&rsquo;re going to look at using custom setter methods in your Ruby class
+initializers to do any custom logic before setting instance variables. I just
+had to do this last week for a gem I&rsquo;m writing. Here&rsquo;s a quick snippet. Read on
+for the full explanation.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">StashNotifier</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">VALID_JOB_STATUSES</span> <span class="o">=</span> <span class="sx">%w{ INPROGRESS SUCCESSFUL FAILED }</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">new_job_status</span> <span class="o">=</span> <span class="n">new_job_status</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">upcase</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="no">VALID_JOB_STATUSES</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@job_status</span> <span class="o">=</span> <span class="n">new_job_status</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="k">raise</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">&quot;&#39;</span><span class="si">#{</span><span class="n">new_job_status</span><span class="si">}</span><span class="s2">&#39; is not a valid Stash Build</span>
+</span><span class='line'><span class="s2">Status! Valid job statuses are </span><span class="si">#{</span><span class="no">VALID_JOB_STATUSES</span><span class="si">}</span><span class="s2">.&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="c1"># rest of class omitted</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<!-- more -->
+
+
+<h2>Background</h2>
+
+<p>Recently, I&rsquo;ve been working on a gem to send Jenkins build status to our <a href="http://www.atlassian.com/software/stash/overview">Stash git server</a> as part of our CD pipeline.</p>
+
+<p>This gem, &lsquo;stash_notifier&rsquo;, takes <code>job_status</code> as an argument in its class initializer. At first I just set the <code>@job_status</code> instance variable directly like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="vi">@job_status</span> <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>    <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>    <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But then I realized I really should <code>upcase</code> the <code>job_status</code> per the <a href="https://developer.atlassian.com/stash/docs/latest/how-tos/updating-build-status-for-commits.html#Updating_build_results">Atlassian SDK docs</a>. Plus I wanted to check the <code>job_status</code> parameter the user passed into the <code>StashNotifier.new</code> method to make sure it was valid. To solve this I wrote a custom setter.</p>
+
+<h2>Custom Setters</h2>
+
+<p>Ruby includes some nice helper methods, <code>attr_reader</code>, <code>attr_writer</code>, and <code>attr_accessor</code> to create setters and getters for you. These just set or return the instance variables and don&rsquo;t allow for any customization. If you want to do some validation or modify the passed-in parameters, define a custom setter like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Class</span> <span class="no">StashNotifier</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:job_status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># other instance vars omitted</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">job_status</span>  <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_status</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_key</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_key</span><span class="o">]</span>
+</span><span class='line'>    <span class="vi">@job_url</span>         <span class="o">=</span> <span class="n">args</span><span class="o">[</span><span class="ss">:job_url</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">job_status</span><span class="o">=</span><span class="p">(</span><span class="n">new_job_status</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># define custom logic here</span>
+</span><span class='line'>    <span class="c1"># see code sample above for full example</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We first define an <code>attr_reader</code> to have Ruby create the getter for us, while still letting us define a custom setter.</p>
+
+<p>Instead of setting the <code>job_status</code> instance variable in our class initializer, we call the custom setter, <code>job_status=</code>. By defining it as a method with a trailing <code>=</code>, we make it a setter. We prepend it with <code>self.</code> to specify that it&rsquo;s a method and not a local variable. This setter method will be called during initialization, <em>and</em> anytime we do this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">notifier</span> <span class="o">=</span> <span class="no">StashNotifer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">notifier</span><span class="o">.</span><span class="n">job_status</span> <span class="o">=</span> <span class="s1">&#39;failed&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Summary</h2>
+
+<p>I hope you&rsquo;ve found this useful. It took quite a bit of Googling for me to find out this little tidbit. Here are a couple of links I found helpful during my research:</p>
+
+<ol>
+<li><a href="http://ruby.about.com/od/oo/ss/Using-Attributes.htm">http://ruby.about.com/od/oo/ss/Using-Attributes.htm</a></li>
+<li><a href="http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable">http://stackoverflow.com/questions/12097726/ruby-classes-initialize-self-vs-variable</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-19T21:56:00-07:00" pubdate data-updated="true">May 19<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/05/12/how-to-present-at-a-tech-conference/" title="Previous Post: How to present at a tech conference">&laquo; How to present at a tech conference</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

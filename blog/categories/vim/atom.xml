@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: vim | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/blog/categories/vim/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Flip your unicorn!]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/07/flip-your-unicorn/"/>
+    <updated>2013-03-07T20:47:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/07/flip-your-unicorn</id>
+    <content type="html"><![CDATA[<p>Let&rsquo;s say you had a unicorn in your code. Maybe something like this:</p>
+
+<pre>
+                                           ________
+                                        .##@@&&&@@##.
+     \                               ,##@&::%&&%%::&@##.
+     ^\^                            #@&:%%000000000%%:&@#
+     /.(((                        #@&:%00'         '00%:&@#
+    (,/"(((__,--.                #@&:%0'             '0%:&@#
+        \  ) _( /{              #@&:%0                 0%:&@#
+        !|| " :||              #@&:%0                   0%:&@#
+        !||   :||              #@&:%0                   0%:&@#
+        '''   '''              "" ' "                   " ' ""
+</pre>
+
+
+<h2>But it&rsquo;s so wrong!</h2>
+
+<p>Clearly, something is wrong with the unicorn. It&rsquo;s not facing the rainbow. This week, we&rsquo;ll learn how to flip the unicorn (or any other text) with an awesome Vim <a href="http://www.drchip.org/astronaut/vim/index.html#Maps">Visual mode mapping</a> courtesy of the inimitable <a href="http://www.drchip.org/astronaut/vim/index.html">Dr. Chip</a></p>
+
+<!--more-->
+
+
+<h2>Show me the map!</h2>
+
+<p>Here it is, just don&rsquo;t ask me to explain it.</p>
+
+<p><code>vim
+vno  &lt;silent&gt; &lt;Leader&gt;fR   c&lt;C-O&gt;:set ri lz&lt;cr&gt;&lt;C-R&gt;"&lt;esc&gt;:norm! dd`&lt;&lt;cr&gt;:set ri! lz!&lt;cr&gt;
+</code></p>
+
+<h2>And, here are the results*</h2>
+
+<pre>
+            /       \               
+          ^/^       ^\^          
+        ))).\       /.(((        
+ .--,__)))"\,)     (,/"(((__,--. 
+}\ )_ (  /             \  ) _( /{
+ ||: " ||!             !|| " :|| 
+ ||:   ||!             !||   :|| 
+ '''   '''             '''   ''' 
+</pre>
+
+
+<p>Well, not exactly. The mapping doesn&rsquo;t exactly flip text. It won&rsquo;t turn a <code>)</code> into a <code>(</code>, or a <code>}</code> into a <code>{</code>. It just exchanges or swaps the places of the characters. Still it gets pretty close, much easier than trying to do it by hand. You can then run substitute commands to flip the <code>)</code>, <code>\</code>, and <code>}</code>.</p>
+
+<h2>The Actual Results</h2>
+
+<pre>
+            \ 
+          ^\^ 
+        (((./ 
+ .--,__((("/,(
+{/ (_ )  \    
+ ||: " ||!    
+ ||:   ||!    
+ '''   '''    
+</pre>
+
+
+<h2>Uhhh, ok, why would you want to do this?</h2>
+
+<p>I have no idea, unless you had a unicorn you wanted to flip on a deadline. Thanks to Google and Dr. Chip for this (marginally useful) Vim tip! Until next week, cheers!</p>
+
+<p>For the rest of the mappings which will flip text upside down as well, see <a href="http://www.drchip.org/astronaut/vim/index.html#Maps">Dr. Chip&rsquo;s maps section</a> on his awesomely 1995 website.</p>
+
+<pre>
+                                         ________
+                                      .##@@&&&@@##.
+                 /                 ,##@&::%&&%%::&@##.                   \                       
+               ^/^                #@&:%%000000000%%:&@#                  ^\^          
+             ))).\              #@&:%00'         '00%:&@#                /.(((        
+      .--,__)))"\,)            #@&:%0'             '0%:&@#              (,/"(((__,--. 
+     }\ )_ (  /               #@&:%0                 0%:&@#                 \  ) _( /{
+      ||: " ||!              #@&:%0                   0%:&@#                !|| " :|| 
+      ||:   ||!              #@&:%0                   0%:&@#                !||   :|| 
+      '''   '''              "" ' "                   " ' ""                '''   ''' 
+</pre>
+
+]]></content>
+  </entry>
+  
+</feed>

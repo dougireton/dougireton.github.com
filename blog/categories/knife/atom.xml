@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: knife | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/blog/categories/knife/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[A knife.rb for our time]]></title>
+    <link href="http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time/"/>
+    <updated>2013-03-17T20:44:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/03/17/a-knife-dot-rb-for-our-time</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>The basic knife.rb you get from the Chef server works, but it&rsquo;s not suitable to check into version control or share with your team. It has the name of your .pem file hardcoded into it and isn&rsquo;t flexible enough for team use. This week we&rsquo;ll look at a generic, flexible <code>knife.rb</code> you can keep in your <code>chef-repo</code> and share with your team.</p>
+
+<!--more-->
+
+
+<h2>What you get out of the box</h2>
+
+<p>Here&rsquo;s the knife.rb you&rsquo;ll get if you ask the Chef server to generate one for you:</p>
+
+<p><code>ruby
+current_dir = File.dirname(__FILE__)
+log_level                :info
+log_location             STDOUT
+node_name                "my_username"
+client_key               "#{current_dir}/my_username.pem"
+validation_client_name   "my_org-validator"
+validation_key           "#{current_dir}/my_org-validator.pem"
+chef_server_url          "https://chefserver.example.com/organizations/my_org"
+cache_type               'BasicFile'
+cache_options( :path =&gt; "#{ENV['HOME']}/.chef/checksums" )
+cookbook_path            ["#{current_dir}/../cookbooks"]
+</code></p>
+
+<h2>A Better Implementation</h2>
+
+<p>Here&rsquo;s what we&rsquo;ve come up with after lots of tinkering. It works on Windows and Mac/Linux. Put this in your <code>chef-repo/.chef/</code> directory and check it into source control.</p>
+
+<p><code>``ruby
+current_dir = File.dirname(__FILE__)
+user_email  =</code>git config &mdash;get user.email`
+home_dir    = ENV[&lsquo;HOME&rsquo;] || ENV[&lsquo;HOMEDRIVE&rsquo;]
+org         = ENV[&lsquo;chef_org&rsquo;] || &lsquo;my_org&rsquo;</p>
+
+<p>knife_override = &ldquo;#{home_dir}/.chef/knife_override.rb&rdquo;</p>
+
+<p>chef_server_url          &ldquo;<a href="https://chefserver.example.com/organizations/#">https://chefserver.example.com/organizations/#</a>{org}&rdquo;
+log_level                :info
+log_location             STDOUT</p>
+
+<h1>USERNAME is UPPERCASE in Windows, but lowercase in the Chef server,</h1>
+
+<h1>so <code>downcase</code> it.</h1>
+
+<p>node_name                ( ENV[&lsquo;USER&rsquo;] || ENV[&lsquo;USERNAME&rsquo;] ).downcase
+client_key               &ldquo;#{home_dir}/.chef/#{node_name}.pem&rdquo;
+cache_type               &lsquo;BasicFile&rsquo;
+cache_options( :path => &ldquo;#{home_dir}/.chef/checksums&rdquo; )</p>
+
+<h1>We keep our cookbooks in separate repos under a ~/chef/cookbooks dir</h1>
+
+<p>cookbook_path            [&ldquo;#{current_dir}/../../../cookbooks&rdquo;]
+cookbook_copyright       &ldquo;Your Company, Inc.&rdquo;
+cookbook_license         &ldquo;none&rdquo;
+cookbook_email           &ldquo;#{user_email}&rdquo;</p>
+
+<p>http_proxy               &ldquo;<a href="http://webproxy.example.com:80">http://webproxy.example.com:80</a>&rdquo;
+https_proxy              &ldquo;<a href="http://webproxy.example.com:80">http://webproxy.example.com:80</a>&rdquo;
+no_proxy                 &ldquo;localhost, 10.<em>, </em>.example.com, *.dev.example.com&rdquo;</p>
+
+<h1>Allow overriding values in this knife.rb</h1>
+
+<p>Chef::Config.from_file(knife_override) if File.exist?(knife_override)</p>
+
+<p>```</p>
+
+<h2>The Goods</h2>
+
+<p>Most of this should be self-explanitory, but there are a couple of interesting things to note. We are getting the user&rsquo;s email from git config on the fly. We use this to set the <code>cookbook_email</code> attribute so it&rsquo;s automatically populated when you create a new cookbook. On line three, we are getting the Home directory which is <code>HOME</code> on Mac and <code>HOMEDRIVE</code> on Windows. On line four, we are getting the <code>org</code> variable. It will default to <code>my_org</code>, but allows you to override it by setting the <code>chef_org</code> environment variable.</p>
+
+<h2>Knife Override</h2>
+
+<p>On line six, we are setting the path to a <code>knife_override.rb</code> file. We source the file at the end of this <code>knife.rb</code> so you can override any values specified in this <code>knife.rb</code>. So far we&rsquo;ve never used it, but it seemed like a good idea at the time.</p>
+
+<h2>Client keys</h2>
+
+<p>On line 14 we are setting the <code>node_name</code> which is your Chef server username. On Mac/Linux, your username is stored in the <code>USER</code> env variable. On Windows, it&rsquo;s <code>USERNAME</code>. Windows usually stores your username in UPPERCASE. We downcase it here since Chef server usernames are lowercase.</p>
+
+<p>On line 15, we are specifying the location of the user&rsquo;s Chef client key (.pem file). We store it in our home directories since we use the same client key for mulitple orgs.</p>
+
+<h2>Proxies, etc</h2>
+
+<p>The rest of the file is pretty straightforward. We use a proxy server at work, so we specify proxy settings. Finally, we source our <code>knife_override.rb</code> if it exists.</p>
+
+<h2>Wrap Up</h2>
+
+<p>So there you have it. We use this same <code>knife.rb</code> in all our <code>chef-repos</code> and check it into version control. When someone wants to use our repo, they just check it out of Git and they can start using knife immediately. The only other step they have to do is to move their client key (username.pem file) to <code>~/.chef/</code>.</p>
+
+<p>I&rsquo;d be remiss if I didn&rsquo;t point out Joshua Timberman&rsquo;s excellent <a href="https://gist.github.com/jtimberman/1718805">&ldquo;Commented knife.rb for all the things&rdquo;</a>. Lot&rsquo;s of good ideas in there too.</p>
+
+<p>Let me know any cool tricks you&rsquo;re using in your <code>knife.rb</code>. Thanks and see you next week!</p>
+]]></content>
+  </entry>
+  
+</feed>

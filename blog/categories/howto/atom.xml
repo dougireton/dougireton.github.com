@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: howto | Automate All the Things!]]></title>
+  <link href="http://dougireton.github.io/blog/categories/howto/atom.xml" rel="self"/>
+  <link href="http://dougireton.github.io/"/>
+  <updated>2013-05-21T22:16:33-07:00</updated>
+  <id>http://dougireton.github.io/</id>
+  <author>
+    <name><![CDATA[Doug Ireton]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Lay out your .vimrc like a Boss]]></title>
+    <link href="http://dougireton.github.io/blog/2013/02/23/layout-your-vimrc-like-a-boss/"/>
+    <updated>2013-02-23T15:21:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/02/23/layout-your-vimrc-like-a-boss</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been using <a href="http://www.vim.org/">Vim</a> for a few years now starting with the excellent <a href="https://github.com/carlhuda/janus">Janus</a> distribution of Vim settings and plugins. As excellent as Janus is though, I really wanted to know each and every setting and plugin for myself. I didn&rsquo;t want any settings I didn&rsquo;t understand.</p>
+
+<p>About eight months ago I decided to get serious. I stripped down my .vimrc to about 20 settings I understood and could start using. I put my .vimrc and plugins in a <a href="https://github.com/dougireton/vimfiles">Git repo</a>. I slowly added settings one by one as I learned more about Vim.</p>
+
+<p>If you want to take a similar path, what follows is my recommended way of organizing your .vimrc to keep things organized.</p>
+
+<!--more-->
+
+
+<h2>Knobs and Dials</h2>
+
+<p>Vim has hundreds if not thousands of settings. It can be overwhelming or exciting, depending on your tolerance for fiddling with &ldquo;knobs and dials&rdquo;. For a long time, I was frustrated with most .vimrcs I saw, including my own. They seemed like giant junk drawers of settings.</p>
+
+<h2>The <code>:options</code> command</h2>
+
+<p>Finally, I hit upon a good organizing pattern. If you type <code>:options</code> in Vim&rsquo;s command mode, you get a giant list of Vim options grouped into related categories, e.g. &ldquo;moving around, searching and patterns&rdquo;, &ldquo;tags&rdquo;, &ldquo;displaying text&rdquo; and so on. These categories make an excellent way of grouping your own .vimrc settings. To get started, I just ran the <code>:options</code> command and copied each section heading in the same order as in the <em>option_window</em>.</p>
+
+<p><code>text
+ 1 important
+ 2 moving around, searching and patterns
+ 3 tags
+ 4 displaying text
+ 5 syntax, highlighting and spelling
+ 6 multiple windows
+ 7 multiple tab pages
+ 8 terminal
+ 9 using the mouse
+10 printing
+11 messages and info
+12 selecting text
+13 editing text
+14 tabs and indenting
+15 folding
+16 diff mode
+17 mapping
+18 reading and writing files
+19 the swap file
+20 command line editing
+21 executing external commands
+22 running make and jumping to errors
+23 language specific
+24 multi-byte characters
+25 various
+</code></p>
+
+<h2>A snippet from my .vimrc</h2>
+
+<p>```vim</p>
+
+<p>&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+&rdquo;  moving around, searching and patterns
+&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+set nostartofline     &rdquo; keep cursor in same column for long-range motion cmds
+set incsearch         &ldquo; Highlight pattern matches as you type
+set ignorecase        &rdquo; ignore case when using a search pattern
+set smartcase         &ldquo; override &lsquo;ignorecase&rsquo; when pattern</p>
+
+<pre><code>                  " has upper case character
+</code></pre>
+
+<p>&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+&rdquo;  tags
+&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
+
+<p>&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+&rdquo;  displaying text
+&ldquo; &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+set scrolloff=3       &rdquo; number of screen lines to show around</p>
+
+<pre><code>                  " the cursor
+</code></pre>
+
+<p>```</p>
+
+<p>Once I had this organizing pattern I slowly added settings one by one, either by reading through the various Vim <a href="http://vimdoc.sourceforge.net/htmldoc/options.html">options</a>, or by reading through various .vimrcs I found online. I also picked up several great settings by reading <a href="http://pragprog.com/book/dnvim/practical-vim">Practical Vim</a> by <a href="http://drewneil.com/">Drew Neil</a>.</p>
+
+<p>Each time I added a setting, I made sure I understood it and added a explanitory comment to my .vimrc.</p>
+
+<h2>Next Steps</h2>
+
+<p>If you don&rsquo;t already have a pattern for your .vimrc, I invite you to try my idea. I&rsquo;ve found it makes my .vimrc more readable and sensible.</p>
+
+<p>I also invite you to check out my <a href="https://github.com/dougireton/vimfiles">.vimrc and other Vim settings on Github</a>. I&rsquo;ve tried to comment each setting in plain English so I know what the setting is when I&rsquo;m reading it six months later.</p>
+
+<p>I&rsquo;d love to hear any .vimrc related tips you have in the comments.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[knife tricks]]></title>
+    <link href="http://dougireton.github.io/blog/2013/02/03/knife-tricks/"/>
+    <updated>2013-02-03T20:40:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/02/03/knife-tricks</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>At work, we have yet to use search extensively in our Chef Recipes, but we do a fair number of ad hoc knife searches. The following are some knife tricks and tips we&rsquo;ve picked up over the last few months. Most of the credit for these goes to my esteemed co-worker, the Impossibly Hip&trade; <a href="https://twitter.com/jondecamp">Jon DeCamp</a>.</p>
+
+<h3>Find all nodes in an environment</h3>
+
+<p><code>bash
+$ knife search node chef_environment:&lt;environment name&gt;
+</code></p>
+
+<h3>Find all nodes which contain a role</h3>
+
+<p>```bash
+$ knife search node role(s):<role name></p>
+
+<p>$ knife search node &ldquo;role:web_server&rdquo; -a hostname
+```
+Use &lsquo;roles&rsquo; plural when looking in the expanded run list.</p>
+
+<!--more-->
+
+
+<h3>Find all nodes which contain a recipe</h3>
+
+<p>```bash</p>
+
+<h1>looks for statsd_handler(::default)</h1>
+
+<p>$ knife search node &ldquo;recipes:statsd_handler&rdquo;</p>
+
+<h1>note the use of \:\: to escape the double-colon</h1>
+
+<p>$ knife search node &ldquo;recipes:windows\:\:reboot_handler&rdquo;
+<code>``
+Note the use of</code>recipes` plural to search the expanded run list.</p>
+
+<h3>Find all non-64 bit nodes</h3>
+
+<p><code>bash
+$ knife search node "(NOT kernel_machine:x86_64)"
+</code></p>
+
+<h3>Return selected attributes from knife search</h3>
+
+<p><code>bash
+$ knife search node "name:*" -a chef_packages.chef.version
+</code>
+This returns the <code>chef_packages.chef.version</code> attribute from all nodes in the Chef Org.</p>
+
+<h3>Add a role to all nodes in an Environment</h3>
+
+<p>```bash</p>
+
+<h1>First, run it like this to run without saving the results back to the Chef Server</h1>
+
+<p>$ knife exec -E &lsquo;nodes.transform(&ldquo;chef_environment:dev&rdquo;) {|n| puts n.run_list &lt;&lt; &ldquo;role[hosts_file]&rdquo; }&rsquo;</p>
+
+<p>$ knife exec -E &lsquo;nodes.transform(&ldquo;chef_environment:dev&rdquo;) {|n| puts n.run_list &lt;&lt; &ldquo;role[hosts_file]&rdquo;; n.save }&rsquo;
+<code>``
+To be on the safe side, run the command above without the</code>n.save<code>so results aren't saved back to the Chef server. When you are sure about the command run it with</code>n.save` to save the results back to the Chef server.</p>
+
+<h3>Add a role to all nodes in an Environment which don&rsquo;t contain the given Role</h3>
+
+<p><code>bash
+$ knife exec -E 'nodes.find("chef_environment:dev") {|n| puts n.run_list &lt;&lt; "role[base]" unless n.run_list.include?("role[base]"); n.save }'
+</code></p>
+
+<h3>Remove a recipe from all nodes in an Environment</h3>
+
+<p><code>bash
+$ knife exec -E 'nodes.transform("chef_environment:dev") {|n| puts n.run_list.remove("recipe[chef-client::upgrade]"); n.save }'
+</code></p>
+
+<h3>Remove all nodes from a given role</h3>
+
+<p><code>bash
+$ knife exec -E 'nodes.find("role:web_server") {|n| n.run_list.remove("role[web_server]"); n.save}'
+</code></p>
+
+<h3>Set a node&rsquo;s run_list back to a single item</h3>
+
+<p><code>bash
+$ knife exec -E 'nodes.transform("name:webserver01.example.com") {|n| n.run_list(["role[base]"])}'
+</code></p>
+
+<h2>Conclusion</h2>
+
+<p>So that&rsquo;s it for this week. I hope you picked up some valuable knife tricks. The knife search command is versatile and combining <code>knife exec</code> with search allows you to do some amazing things with your infrstructure. Share some of your own knife tricks in the comments or over on Twitter.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Make Vim's Goto File command open included Chef recipes]]></title>
+    <link href="http://dougireton.github.io/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/"/>
+    <updated>2013-01-27T21:18:00-08:00</updated>
+    <id>http://dougireton.github.io/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes</id>
+    <content type="html"><![CDATA[<p>Ohai Chefs!</p>
+
+<p>Last week, we looked at how to get <a href="http://dougireton.com/blog/2013/01/19/get-chef-clients-by-version/">Chef clients grouped by version</a>. This week, we&rsquo;ll look at something completely different &ndash; customizing Vim to jump to included Chef recipes via the <a href="http://vim.wikia.com/wiki/Open_file_under_cursor#Go_to_file">Goto File command</a> &ndash; <code>gf</code>.</p>
+
+<h2>TL;DR</h2>
+
+<p>Add this to your .vimrc to be able to jump to included recipes (via <code>include_recipe</code>). Caveat: you can only jump to fully-qualified recipe names, e.g. <code>my_cookbook::my_recipe</code>. Hitting <code>gf</code> on <code>include_recipe 'my_cookbook'</code>, won&rsquo;t jump to <code>my_cookbook::default</code>.</p>
+
+<p><code>vim .vimrc autocmd for include_recipe
+" Make gf work on Chef include_recipe lines
+" Add all cookbooks/*/recipe dirs to Vim's path variable
+autocmd BufRead,BufNewFile */cookbooks/*/recipes/*.rb setlocal path+=recipes;/cookbooks/**1
+</code></p>
+
+<p>Read on to find out why this works.</p>
+
+<!--more-->
+
+
+<h2>Including Recipes</h2>
+
+<p>In Chef you can <a href="http://docs.opscode.com/essentials_cookbook_recipes_in_recipes.html">include one recipe in another recipe</a>. For example, in one of our &ldquo;application&rdquo; cookbooks our <code>default.rb</code> recipe contains about 15 <code>include_recipe</code> statements which include recipes from the cookbook as well as recipes from other cookbooks. Often, I want to open one of the included recipes from the <em>default</em> recipe.</p>
+
+<h2>Vim Paths</h2>
+
+<p><code>vim .vimrc autocmd for include_recipe
+" Make gf work on Chef include_recipe lines
+" Add all cookbooks/*/recipe dirs to Vim's path variable
+autocmd BufRead,BufNewFile */cookbooks/*/recipes/*.rb setlocal path+=recipes;/cookbooks/**1
+</code></p>
+
+<p>The autocmd above runs when you read in an existing file (BufRead) or create a new file (BufNewFile) in a Chef cookbook <code>recipes</code> directory. The directory path <code>*/cookbooks/*/recipes/*.rb</code> assumes you have a <code>cookbooks</code> directory which contains your cookbooks and inside each cookbook you have a <code>recipes</code> directory.</p>
+
+<p>The <code>setlocal</code> sets the path option locally for the recipe file, not globally in Vim.</p>
+
+<p>The actual <code>path</code> value deserves a bit more explanation. <code>path+=recipes;/cookbooks/**1</code> means append <code>recipes</code> to the current working directory, and also go upwards to the <code>cookbooks</code> directory and search all directories one level down from <code>cookbooks</code> and append <code>recipes</code> to those as well. So in other words it will search for the file under the cursor in the current cookbook&rsquo;s <code>recipe</code> directory, and all other cookbooks' <code>recipe</code> directories as well.</p>
+
+<p>See Vim&rsquo;s help on <a href="http://vimdoc.sourceforge.net/htmldoc/editing.html#file-searching">file searching</a> for more info.</p>
+
+<h2>Conclusion</h2>
+
+<p>So there you have it.</p>
+
+<ol>
+<li>Throw that line in your .vimrc file</li>
+<li>??</li>
+<li><a href="http://www.youtube.com/watch?v=tO5sxLapAts">Profit</a></li>
+</ol>
+
+
+<p>Being able to jump to included Chef recipes is a handy little trick, but there is one caveat. It doesn&rsquo;t work for default recipes, e.g. <code>include_recipe "foo"</code>. The next step for this trick is to use the <code>includeexpr</code> <a href="http://vimdoc.sourceforge.net/htmldoc/options.html#'includeexpr'">option</a> to add <code>default.rb</code> to the filename.</p>
+
+<p>Next week, we&rsquo;ll look at various knife search tricks for getting data from your Chef server.</p>
+]]></content>
+  </entry>
+  
+</feed>

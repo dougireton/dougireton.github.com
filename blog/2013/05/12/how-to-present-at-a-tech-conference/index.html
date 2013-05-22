@@ -1,0 +1,404 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How to present at a tech conference - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! This week I&rsquo;ll share my tips and tricks for presenting at a tech conference,
+based on my vast experience of one conference. So, &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">How to Present at a Tech Conference</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-12T21:33:00-07:00" pubdate data-updated="true">May 12<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>This week I&rsquo;ll share my tips and tricks for presenting at a tech conference,
+based on my vast experience of one conference. So, take it with several grains
+of salt.</p>
+
+<!-- more -->
+
+
+<h2>Chef Conf 2013</h2>
+
+<p>I had the opportunity to speak at Chef Conf 2013 on April 26th on <a href="http://youtu.be/APBSff1_oVY">Tips and
+Tricks for Automating Windows with Chef</a>. I actually proposed a completely
+different talk back in January which when it just wasn&rsquo;t coming together in
+early April, I had to abandon.</p>
+
+<h2>The Proposal</h2>
+
+<p>I don&rsquo;t have a lot of advice here, except to share my mistake. In January, I
+submitted this proposal:</p>
+
+<p>&ldquo;Come hear about how Nordstrom developed a Continuous Delivery workflow for Chef
+development. Engineers test cookbooks locally using Vagrant, then commit to Git,
+which triggers a Jenkins build. Jenkins runs cookbook tests, then uploads
+cookbooks to our Private Chef server.&rdquo;</p>
+
+<p>Which would have made a great talk. In January, we hadn&rsquo;t even started on a CD
+pipeline for Chef Cookbooks. By April, we hadn&rsquo;t even started on a CD
+pipeline for Chef Cookbooks. I finally had to admit, there was no way I could
+get up and talk about something we hadn&rsquo;t done yet. I had to email Nathen Harvey
+at Opscode and tell him I needed to talk about a different topic. He was great
+and I was able to pick a new topic, one I knew I had quite a bit of experience
+with.</p>
+
+<p>So my advice is to pick a topic on which you already have experience instead of
+something you hope to get to before the confernece.</p>
+
+<h2>The Preparation</h2>
+
+<p>Preparing for a talk is a lot of work. I estimate I spent an 60-75 min for every
+minute of actual speaking time, roughly 30-35 hours of work for a 25 min talk.
+When you know you&rsquo;re going to be speaking in front of very smart engineers, you
+really need to know your topic thoroughly and anticipate the kinds of questions
+you&rsquo;ll get.</p>
+
+<h2>Tell a Story</h2>
+
+<p>Don&rsquo;t just dive into technical details and code samples. Tell a story. We humans
+are hard-wired to engage with stories. Share a problem you faced, why it was
+challenging, what you tried that didn&rsquo;t work, and how you overcame it. Then dive
+into the technical details. Your audience will be ready to hear you talk about
+the technical nitty-gritty after you&rsquo;ve got their attention with a story.</p>
+
+<h2>Presentation Zen</h2>
+
+<p>I have used <a href="http://www.amazon.com/Presentation-Zen-Simple-Delivery-Edition/dp/0321811984">Presentation Zen</a> by Garr Reynolds for several presentations and
+I can&rsquo;t recommend it enough. You should read this before your next presentation.</p>
+
+<h2>Practice</h2>
+
+<p>I gave my talk three times before I gave it for real. I presented it to my team
+twice and I presented it to the Seattle Chef meetup the week before Chef Conf.
+Even though these were unfinished drafts, I got very valuble feedback from a
+friendly audience. My talk was much better because of the practice and feedback
+I received. It also gave me confidence that my topic was useful and helpful to
+people.</p>
+
+<p>Nathen Harvey (Opscode) also scheduled a few Google+ hangouts for conference
+speakers which were very helpful. I got a chance to meet some other speakers and
+get my questions answered. He also encouraged speakers to send him our slides
+before the conference. It was just additional reassurance that I was on the
+right track.</p>
+
+<h2>Logistics</h2>
+
+<p>And finally, some logistical tips.</p>
+
+<ol>
+<li><p>Follow the code of conduct. This should go without saying, but no
+inappropriate content in your slides.</p></li>
+<li><p>Ask what resolution you&rsquo;ll be presenting at. I formatted my slides for 1024 x
+768 originally, and then had to change to 1280 x 720. This makes a big
+difference if you are using full-bleed photos.</p></li>
+<li><p>Make sure any photos are licensed for reuse. I find nearly all my slide
+photos by doing Creative Commons-licensed searches on Flickr.com.</p></li>
+<li><p>Give proper attribution for photos you use. I usually just paste the link to
+the photo in the bottom right-hand corner of the slide.</p></li>
+<li><p>Have your slides on your laptop <strong>and</strong> on a USB stick. Even if you are
+supposed to present on your laptop, it may not work and you may have to use a
+conference provided laptop.</p></li>
+<li><p>Don&rsquo;t depend on using Keynote Remote from your phone to drive the slides. You
+can almost count on conference wifi or a Bluetooth connection being flaky.
+Use a real remote.</p></li>
+<li><p>Show up 15 min before your talk to get setup with the mic, make sure your
+laptop can connect to the projector, etc.</p></li>
+<li><p>Ask for a glass or bottle of water for your talk.</p></li>
+<li><p>Get enough sleep the night before.</p></li>
+<li><p>Bring any video adapters you may need, e.g HDMI, DVI, etc.</p></li>
+<li><p>If you are having one of your teammates join you on stage, ask the
+conference organizers for a mic for them.</p></li>
+<li><p>Repeat the question. People in the audience and people watching your
+presentation later will appreciate you repeating any questions you get
+before answering them.</p></li>
+<li><p>Display code on a light background. If you create Github gists for each of your
+code samples, you can copy/paste those into your slides and it will preserve
+the formatting.</p></li>
+<li><p>Have a printed copy of your slide notes with you. Your carefully crafted
+prensenter display may not work with the conference projector and you may
+end up with just your slides showing on your laptop instead of your presenter
+display with slide notes.</p></li>
+</ol>
+
+
+<h2>Summary</h2>
+
+<p>That&rsquo;s it for this week. I hope you&rsquo;ll get a chance to present at a future
+conference if you haven&rsquo;t already. I&rsquo;d love to hear your presentation tips in
+the comments. Cheers.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-12T21:33:00-07:00" pubdate data-updated="true">May 12<span>th</span>, 2013</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/04/14/will-you-join-us/" title="Previous Post: Will you join us?">&laquo; Will you join us?</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/" title="Next Post: Ruby Fundamentals: Using Custom Setters to clean up Instance Variables">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/05/12/how-to-present-at-a-tech-conference/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

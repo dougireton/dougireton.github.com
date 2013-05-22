@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Get Chef Clients by version - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! At work, we&rsquo;re being converted to the gospel of Etsy&rsquo;s Church of Graphs. We&rsquo;re sending Chef run times and other metrics &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Get Chef Clients by Version</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-19T20:19:00-08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>At work, we&rsquo;re being converted to the gospel of Etsy&rsquo;s <a href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">Church of Graphs</a>. We&rsquo;re sending Chef run times and other metrics to a combination of <a href="https://github.com/etsy/statsd/">StatsD</a>, <a href="http://graphite.wikidot.com/">Graphite</a>, and <a href="http://fdietz.github.com/team_dashboard/">Team Dashboard</a>. Last week, I wanted to add a graph of chef clients by version. In other words, I wanted to see how many Chef 0.10.8, and 10.12 clients we have left to upgrade.</p>
+
+<p>This week, we&rsquo;ll see how to get Chef client versions from the Chef Server, including one way which turned out to be more than <strong>30 times faster</strong> in my tests.</p>
+
+<!--more-->
+
+
+<h2>The First Attempt</h2>
+
+<p>I needed to get a count of Chef clients grouped by version. I envisioned ending up with a hash like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My first thought was to do this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife node list | xargs -I <span class="o">{}</span> knife node show <span class="o">{}</span> -a chef_packages.chef.version -Fj
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This pipes a list of all nodes in an org to <code>knife node show</code> and returns <code>chef_packages.chef.version</code> in JSON format.</p>
+
+<p>This works, but it takes a <strong>loooong</strong> time, nearly 40 <strong>minutes</strong> on my quad-core Macbook Pro against our Private Chef server to get the Chef client version for 908 nodes, or ~2.4 seconds per node.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife node list
+</span><span class='line'>  1.82s user 0.36s system 75% cpu 2.878 total
+</span><span class='line'>
+</span><span class='line'>xargs -I <span class="o">{}</span> knife node show <span class="o">{}</span> -a chef_packages.chef.version
+</span><span class='line'>  1771.53s user 278.24s system 85% cpu ** 39:46.55 total **
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This takes so long because <code>knife node show</code> makes a round-trip to the Chef server for each node. We need to speed this up, preferably by an order of magnitude.</p>
+
+<h2>The Second Attempt</h2>
+
+<p>What if we asked the Chef server to get Chef Client version info for every node in the org and send it to us in one batch?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife search node <span class="s1">&#39;name:*&#39;</span> -a chef_packages.chef.version –Fj
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This approach is much more efficient; just over a minute instead of 40 minutes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife search node <span class="s1">&#39;name:*&#39;</span> -a chef_packages.chef.version –Fj
+</span><span class='line'>  40.72s user 1.54s system 57% cpu ** 1:13.81 total **
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The results from the knife search command look like this; easily parsable JSON.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;results&quot;</span><span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;rows&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;webserver01.example.com&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;webserver02.example.com&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">:</span> <span class="s2">&quot;10.12.0&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;db01.example.com&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Ohai Spelunking</h2>
+
+<p>But, hold on a second, how did I know the Chef client version attribute is named <code>chef_packages.chef.version</code>? I didn&rsquo;t, but here&rsquo;s how I found it:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>knife node show myserver01.example.com -l | grep -C 5 10.16.2
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I knew that <code>myserver01.example.com</code> was running Chef Client 10.16.2. I did a <code>knife node show</code> with the <code>-l</code> option to show <strong>all</strong> Ohai attributes and grep&rsquo;d for <code>10.16.2</code> with five lines of context above and below (<code>-C 5</code>).</p>
+
+<p>Here&rsquo;s the result of that whole command:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>Automatic Attributes <span class="o">(</span>Ohai Data<span class="o">)</span>:
+</span><span class='line'>chef_packages:
+</span><span class='line'>  chef:
+</span><span class='line'>    chef_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.16.2/lib
+</span><span class='line'>    version:    10.16.2
+</span><span class='line'>  ohai:
+</span><span class='line'>    ohai_root:  C:/opscode/chef/embedded/lib/ruby/gems/1.9.1/gems/ohai-6.14.0/lib/ohai
+</span><span class='line'>    version:    6.14.0
+</span><span class='line'><span class="nb">command</span>:           <span class="o">{}</span>
+</span><span class='line'>counters:
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From the output above, I can walk down the <code>chef_packages</code> attribute to determine the attribute I&rsquo;m looking for is <code>chef_packages.chef.version</code>.</p>
+
+<h2>Parsing the Results</h2>
+
+<p>So, now that we have the raw JSON data, how can we turn it into this?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s take a look at a script to parse the JSON list of nodes into a nice &ldquo;grouped-by&rdquo; version hash:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;json&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">KNIFE_RB</span> <span class="o">=</span> <span class="s1">&#39;.chef/knife.rb&#39;</span>
+</span><span class='line'><span class="no">NODE_LIST</span> <span class="o">=</span> <span class="sb">`knife search node -c </span><span class="si">#{</span> <span class="no">KNIFE_RB</span> <span class="si">}</span><span class="sb"> &#39;name:*&#39; -a chef_packages.chef.version --format json 2&gt;&amp;1`</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">get_chef_clients_by_version</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># turn JSON into Ruby objects</span>
+</span><span class='line'>  <span class="n">nodes_json</span> <span class="o">=</span> <span class="no">JSON</span><span class="o">.</span><span class="n">parse</span> <span class="n">nodes</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># create an array of all chef client versions</span>
+</span><span class='line'>  <span class="n">client_versions</span> <span class="o">=</span> <span class="n">nodes_json</span><span class="o">[</span><span class="s1">&#39;rows&#39;</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">[</span><span class="s1">&#39;chef_packages.chef.version&#39;</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># initialize an empty hash to store our final counts grouped by version</span>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># For each item in the client_versions array, create a unique key in our</span>
+</span><span class='line'>  <span class="c1"># number_of_clients_by_version hash and increment our counter</span>
+</span><span class='line'>  <span class="n">client_versions</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">version</span><span class="o">|</span> <span class="n">number_of_clients_by_version</span><span class="o">[</span><span class="n">version</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="n">get_chef_clients_by_version</span><span class="p">(</span><span class="no">NODE_LIST</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s take it line by line. On line one we&rsquo;re requiring <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/json/rdoc/JSON.html">JSON</a>. On line four we&rsquo;re executing the <code>knife search</code> command. Lines 6 &ndash; 21 are a function to parse the node data into our final count of versions.</p>
+
+<h2>The <code>get_chef_clients_by_version</code> method</h2>
+
+<p>This method is where all the exciting stuff happens. On line 9, we&rsquo;re parsing the JSON data and creating a Ruby data structure which looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="o">=&gt;</span><span class="mi">3</span><span class="p">,</span>
+</span><span class='line'> <span class="s2">&quot;rows&quot;</span><span class="o">=&gt;</span>
+</span><span class='line'>  <span class="o">[</span><span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;webserver01.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>   <span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;webserver02.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>   <span class="p">{</span><span class="s2">&quot;chef_packages.chef.version&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;db01.example.com&quot;</span><span class="p">},</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Line 12 is my favorite line of the method.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="c1"># create an array of all chef client versions</span>
+</span><span class='line'>  <span class="n">client_versions</span> <span class="o">=</span> <span class="n">nodes_json</span><span class="o">[</span><span class="s1">&#39;rows&#39;</span><span class="o">].</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">[</span><span class="s1">&#39;chef_packages.chef.version&#39;</span><span class="o">]</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It uses Ruby&rsquo;s super useful <a href="http://www.ruby-doc.org/core-1.9.3/Enumerable.html#method-i-map"><code>map</code></a> method to create an simple array of versions from the <code>rows</code> array of two-element hashes. The result of the <code>map</code> looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">[</span><span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;10.16.2&quot;</span><span class="p">,</span> <span class="s2">&quot;10.12.0&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From there we create and return the <code>number_of_clients_by_version</code> hash to hold our results and iterate over each item in the <code>client_versions</code> array, counting the nodes by version.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># initialize an empty hash to store our final counts grouped by version</span>
+</span><span class='line'>  <span class="n">number_of_clients_by_version</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># For each item in the client_versions array, create a unique key in our</span>
+</span><span class='line'>  <span class="c1"># number_of_clients_by_version hash and increment our counter</span>
+</span><span class='line'>  <span class="n">client_versions</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">version</span><span class="o">|</span> <span class="n">number_of_clients_by_version</span><span class="o">[</span><span class="n">version</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Thanks to my Talented and Gifted&trade; co-worker <a href="https://twitter.com/moserke">Kevin</a> for <a href="http://stackoverflow.com/questions/569694/count-duplicate-elements-in-ruby-array">this StackOverflow link</a> which explained how to do the group-by version.</p>
+
+<p>So here&rsquo;s the result of the script, which is exactly what we set out to accomplish:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;10.12.0&#39;</span> <span class="o">=&gt;</span> <span class="mi">112</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.16.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">534</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;10.18.2&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><a href="http://www.youtube.com/watch?v=WEQnzs8wl6E">Fade to Black</a></h2>
+
+<p>So there you have it. We compared two approaches to returning data from the Chef server, with one being an order of magnitude faster. We figured out how to find specific Ohai attribute names, and we created a script to transform the raw data to something truly useful.</p>
+
+<p>These posts seem to keep getting longer, so maybe next week, we&rsquo;ll have something short and sweet. Thanks for reading and I&rsquo;d love to hear your comments.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-19T20:19:00-08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef,</a>, <a class='category' href='/blog/categories/metrics/'>metrics</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/01/13/creating-an-lwrp-part-3/" title="Previous Post: Creating an LWRP - part 3">&laquo; Creating an LWRP - part 3</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/01/27/make-vims-gf-command-open-included-chef-recipes/" title="Next Post: Make Vim's Goto File command open included Chef recipes">Make Vim's Goto File command open included Chef recipes &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/01/19/get-chef-clients-by-version/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

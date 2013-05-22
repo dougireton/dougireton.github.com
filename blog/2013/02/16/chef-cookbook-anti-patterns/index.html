@@ -1,0 +1,406 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Chef: Patterns and Anti-Patterns for Cookbooks, Environments, Roles - Automate All the Things!</title>
+  <meta name="author" content="Doug Ireton">
+
+  
+  <meta name="description" content="Ohai Chefs! In this guide we&rsquo;ll look at some common Chef anti-patterns and I&rsquo;ll suggest alternative patterns which avoid the pitfalls and &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Automate All the Things!" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-37063392-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Automate All the Things!</a></h1>
+  
+    <h2>Doug Ireton's blog about Chef, Git, Ruby, Vim, and Infrastructure Automation</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dougireton.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Chef: Patterns and Anti-Patterns for Cookbooks, Environments, Roles</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-16T20:25:00-08:00" pubdate data-updated="true">Feb 16<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Ohai Chefs!</p>
+
+<p>In this guide we&rsquo;ll look at some common Chef anti-patterns and I&rsquo;ll suggest alternative patterns which avoid the pitfalls and lead you to Chef nirvana.</p>
+
+<p>This post was inspired by BryanWB&rsquo;s post <a href="http://devopsanywhere.blogspot.com/2012/11/how-to-write-reusable-chef-cookbooks.html">How to write reusable cookbooks, Gangnam Style</a></p>
+
+<!--more-->
+
+
+<h2>Anti-Pattern: Modifying (forking) community cookbooks</h2>
+
+<p>I&rsquo;ve certainly done this and you probably have too. It starts off fairly innocently. You add an attribute here, maybe update the cookbook&rsquo;s metadata.rb. Pretty soon, you&rsquo;ve added recipes, multiple attributes and maybe an LWRP or two. Now you have a mess, especially if the cookbook is under active development on Github. You <em>will</em> have merge conflicts. You may get hard to debug logic errors if the upstream cookbook changes and your changes are similar but slightly different. And how do you version your &ldquo;Frankenstein&rdquo; cookbook? Do you take the upstream Github version number? Your own version number based on the upstream version number? In short this is an anti-pattern which can be hard to undo.</p>
+
+<p>The only exeception to this is when you want to share your changes back with the community. You should create a feature branch in Git with your changes and submit a pull request from that branch. This should be a short-lived branch which lives only until the pull request is merged upstream.</p>
+
+<h2>Pattern: Create a wrapper cookbook with your custom recipes and attributes</h2>
+
+<p>Instead of forking and modifying an upstream community or Opscode cookbook, you should use it unmodified with a company-specific wrapper cookbook on top. In your wrapper cookbook you will add a metadata dependency on the community cookbook and use <code>include_recipe</code> to run recipes from the community cookbook. Set company-specific attributes in your wrapper cookbook to override the community cookbook defaults. Company-specific recipes should go into this wrapper cookbook as well.</p>
+
+<p>See <a href="https://github.com/bryanwb/chef-rewind">Chef-Rewind</a> for a gem which can help you with this pattern.</p>
+
+<h2>Anti-Pattern: Using Role Attributes</h2>
+
+<p>Role attributes are a particularly dangerous anti-pattern which can can break your production environment. Imagine this scenario. You have a <code>web_server</code> role with attributes for names and properties of two web sites you need to create on that server. Now imagine you need to split those web sites into two separate server roles, <code>app_server</code>, and <code>blog_server</code>. How do you test it in your dev environment without breaking prod? You can either roll the dice and make the change, hoping your don&rsquo;t break your prod environment or you have to try to override those attributes in environment files (first dev, then test, then staging, etc) and remember to clean them up after you&rsquo;ve reached prod. Neither option is really workable.</p>
+
+<p>You should use attributes in a wrapper cookbook instead.</p>
+
+<h2>Pattern: Set custom attributes in a wrapper cookbook</h2>
+
+<p>Roles are not versioned. Cookkbooks are. By setting your custom attributes in a wrapper cookbook and pinning environments to specific cookbook versions, you can roll out attribute changes to dev, then test, then staging, then prod.</p>
+
+<p>Ideally, you would have your environments automatically pinned by your CI server (e.g. Jenkins) as you test and promote cookbooks from dev to test to staging to prod, but that setup is beyond the scope of this blog post.</p>
+
+<h2>Anti-Pattern: Setting a Server&rsquo;s Run List in a Role</h2>
+
+<p>Chef&rsquo;s Roles seem ideally suited to specifying the run list of all the recipes needed to build the server. However, this pattern suffers from the same problems as using Role Attributes above. If you add or remove recipes from the Role&rsquo;s <code>run_list</code>, that change affects all servers in the role, including Prod.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">name</span> <span class="s2">&quot;web_server&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;Role for web servers&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">run_list</span><span class="p">(</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::disk_configuration]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::dhcp_reservation]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::pagefile]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[utility::install_tools]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[web_server::web_sites]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe[base_server::ssl_certs]&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Pattern: Setting a Server&rsquo;s Run List in a &ldquo;role&rdquo; or &ldquo;application&rdquo; cookbook&rsquo;s default recipe</h2>
+
+<p>Keep your Roles lightweight. The list of recipes needed to build your application or web server should be kept in an &ldquo;application&rdquo; cookbook instead of a Role. For example if you are building a prototypical web server, you Role should look like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">name</span> <span class="s2">&quot;web_server&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;Role for web servers&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">run_list</span><span class="p">(</span>
+</span><span class='line'>  <span class="s2">&quot;role[base]&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;recipe{web_server]&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Your web_server &ldquo;application&rdquo; cookbook&rsquo;s default recipe should look like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># web_server cookbook recipes/default.rb</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::disk_configuration&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::dhcp_reservation&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::pagefile&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;utility::install_tools&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;web_server::web_sites&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="n">include_recipe</span> <span class="s2">&quot;base_server::ssl_certs&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Again, this is because you can easily version cookbooks and test recipe and attribute changes to version 2.1.0 of your cookbook in your &ldquo;Dev&rdquo; environment while you keep your &ldquo;Prod&rdquo; environment pinned to v1.5.0.</p>
+
+<h2>Wrap Up</h2>
+
+<p>By following the patterns above you will be save yourself major merging headaches by keeping your custom cookbook changes in wrapper cookbooks and be able to easily create targeted pull requests to share back with the community. By setting custom attributes in your wrapper cookbooks, you can roll changes from dev, to test, to prod by promoting an updated cookbook version through each environment. Finally, by keeping your server&rsquo;s run list in an &ldquo;application&rdquo; cookbook, you&rsquo;ll keep almost everything needed to build that server together in a versioned, testable cookbook.</p>
+
+<p>I hope you&rsquo;ll be able to take away some good practices here. We&rsquo;ve learned the hard way about each of the anti-patterns above and are still in the process of fully adopting the practices listed above. Feel free to comment about additional anti-patterns/patterns in the comments below.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Doug Ireton</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-16T20:25:00-08:00" pubdate data-updated="true">Feb 16<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/" data-via="dougireton" data-counturl="http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/02/03/knife-tricks/" title="Previous Post: knife tricks">&laquo; knife tricks</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/" title="Next Post: Lay out your .vimrc like a Boss">Lay out your .vimrc like a Boss &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/12/how-to-present-at-a-tech-conference/">How to present at a tech conference</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/14/will-you-join-us/">Will you join us?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/dougireton">@dougireton</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'dougireton',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dougireton?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Doug Ireton -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dougireton';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/';
+        var disqus_url = 'http://dougireton.github.io/blog/2013/02/16/chef-cookbook-anti-patterns/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
