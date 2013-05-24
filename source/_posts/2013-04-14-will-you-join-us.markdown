@@ -33,7 +33,7 @@ Our team, Infrastructure Engineering, is only three engineers right now. I work 
 
 We work in an open, collaborative environment and regularly bounce ideas off one another. We also have a 55” monitor on which we do code reviews, display our Chef Client run metrics (via StatsD, Graphite, and Team Dashboard), and keep up with DevOps Reactions.
 
-{% img ../images/infeng\_collab.png 300 200 'Our work area' %}
+{% img /images/infeng\_collab.png 300 200 'Our work area' %}
 
 Though we have a small team, we are working closely with other teams to spread the DevOps love. For the past four months, we’ve had a couple of other engineers from our web ops team embedded on our team, sitting next to us, working on automating our web server builds and configuration. This has by far been the best way to cross-pollenate the devops culture and knowledge of Chef, Ruby, Git, code review, etc. At this point, our web ops team has successfully picked up Chef, Ruby, Git, etc. and is running with it with only a little help now and then. It’s been awesome to see them run with it.
 
