@@ -9,7 +9,7 @@ Ohai Chefs!
 
 This week, the week before Chef Conf, I’d like to talk a bit about our team and our culture, and invite you to join us.
 
-{% img /images/infeng_collab.png 450 300 'Our work area' %}
+{% img /images/infeng_area.png 450 300 'Our work area' %}
 
 ## tl;dr
 
