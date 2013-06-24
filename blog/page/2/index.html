@@ -9,7 +9,7 @@
   <meta name="author" content="Doug Ireton">
 
   
-  <meta name="description" content="Ohai Chefs! In this guide we&rsquo;ll look at some common Chef anti-patterns and I&rsquo;ll suggest alternative patterns which avoid the pitfalls and &hellip;">
+  <meta name="description" content="I&rsquo;ve been using Vim for a few years now starting with the excellent Janus distribution of Vim settings and plugins. As excellent as Janus is &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,53 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/">Lay Out Your .vimrc Like a Boss</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-23T15:21:00-08:00" pubdate data-updated="true">Feb 23<span>rd</span>, 2013</time>
+        
+         | <a href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&rsquo;ve been using <a href="http://www.vim.org/">Vim</a> for a few years now starting with the excellent <a href="https://github.com/carlhuda/janus">Janus</a> distribution of Vim settings and plugins. As excellent as Janus is though, I really wanted to know each and every setting and plugin for myself. I didn&rsquo;t want any settings I didn&rsquo;t understand.</p>
+
+<p>About eight months ago I decided to get serious. I stripped down my .vimrc to about 20 settings I understood and could start using. I put my .vimrc and plugins in a <a href="https://github.com/dougireton/vimfiles">Git repo</a>. I slowly added settings one by one as I learned more about Vim.</p>
+
+<p>If you want to take a similar path, what follows is my recommended way of organizing your .vimrc to keep things organized.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/02/23/layout-your-vimrc-like-a-boss/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -571,64 +618,9 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Creating a Git Pre-commit Hook for Chef Cookbooks</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-12-10T21:02:00-08:00" pubdate data-updated="true">Dec 10<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>We&rsquo;ve been using Chef in our group now for a few months, but until now we haven&rsquo;t been serious about linting or testing our Chef cookbooks. I decided to get serious today and write a Git pre-commit <a href="http://git-scm.com/docs/githooks">hook</a> for linting cookboks.</p>
-
-<p>Git runs the pre-commit hook script before each commit. This allows you to run code quality checks so only clean code is committed to your repo.</p>
-
-<p>It&rsquo;s important to note that git hooks aren&rsquo;t copied down when you clone a git repo. Each developer will need to create his or her own pre-commit hook script in the .git/hooks/ directory of the repo. If you wanted to get fancy, you could keep git hook scripts in a &ldquo;utility&rdquo; repo and have a rake script to copy them to the right location.</p>
-
-<p>The pre-commit script below does four things:</p>
-
-<ol>
-<li>Runs a built-in Git whitespace check for trailing whitespace, mixed tabs and spaces, etc.</li>
-<li>Runs <a href="http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test">&lsquo;knife cookbook test&rsquo;</a> to check Ruby and ERB template syntax.</li>
-<li>Runs <a href="https://github.com/turboladen/tailor">&lsquo;tailor&rsquo;</a> to check your code against Ruby style conventions.</li>
-<li>Runs <a href="http://acrmp.github.com/foodcritic/">&lsquo;foodcritic&rsquo;</a>, the de facto Chef cookbook linting tool.</li>
-</ol>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/3/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -641,6 +633,10 @@
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/06/23/encouraging-women-in-dev-slash-ops/">Encouraging Women in Dev/Ops</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2013/05/19/ruby-fundamentals-using-custom-setters-to-clean-up-instance-variables/">Ruby Fundamentals: Using Custom Setters to clean up Instance Variables</a>
@@ -656,10 +652,6 @@
     
       <li class="post">
         <a href="/blog/2013/04/06/favorites-from-the-treasure-chest/">Favorites from the treasure chest</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/03/31/chef-wanted-apply-within/">Chef wanted. Apply within</a>
       </li>
     
   </ul>

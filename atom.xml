@@ -4,7 +4,7 @@
   <title><![CDATA[Automate All the Things!]]></title>
   <link href="http://dougireton.github.io/atom.xml" rel="self"/>
   <link href="http://dougireton.github.io/"/>
-  <updated>2013-05-23T22:40:50-07:00</updated>
+  <updated>2013-06-23T21:57:11-07:00</updated>
   <id>http://dougireton.github.io/</id>
   <author>
     <name><![CDATA[Doug Ireton]]></name>
@@ -12,6 +12,48 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Encouraging Women in Dev/Ops]]></title>
+    <link href="http://dougireton.github.io/blog/2013/06/23/encouraging-women-in-dev-slash-ops/"/>
+    <updated>2013-06-23T21:00:00-07:00</updated>
+    <id>http://dougireton.github.io/blog/2013/06/23/encouraging-women-in-dev-slash-ops</id>
+    <content type="html"><![CDATA[<p>This past week, I went to <a href="http://velocityconf.com/velocity2013">Velocity</a> and <a href="http://devopsdays.org/events/2013-mountainview/program/">DevOps Days</a> in Silicon Valley, CA. Both
+conferences were amazing and I learned a ton. During DevOps Days I led an <a href="http://martinfowler.com/bliki/OpenSpace.html">Open
+Space</a> session on &ldquo;Encouraging Women in Dev/Ops&rdquo;. I was humbled by the number
+of people who attended and their passion for the topic. Read on for a summary of
+my notes taken during the hour we had.</p>
+
+<!-- more -->
+
+
+<ol>
+<li><p>Women will apply for job when they meet 100% of criteria, men 60%
+I suspect this is because women are taught not to be boastful as girls, while
+boys are taught to &ldquo;go for it&rdquo;. Not sure if there&rsquo;s science to back up this
+claim.</p></li>
+<li><p>Hiring managers networks contain too few women, so expand those networks
+Austin: Girls Hack, provides bonding place for women in tech
+Other cities have women&rsquo;s tech meetups. For example, here&rsquo;s a <a href="http://www.meetup.com/find/?categories=&amp;keywords=women+technology&amp;radius=5">good listing in
+Seattle</a></p></li>
+<li><p>Benefits: Longer maternity and flex hours are better for women candidates,
+job share Foosball table is not necessarily a selling point. Be careful not
+to create a &ldquo;dude&rsquo;s&rdquo; environment at work</p></li>
+<li><p>As a manager treat everyone as an individual. Be careful not to treat women
+on your team as &ldquo;one of the guys&rdquo;, but also not like a &ldquo;fragile flower&rdquo;.</p></li>
+<li><p>We praise women for appearance and kindness; men praised for accomplishments, so
+praise women for accomplishments. This is an awareness thing and takes practice.</p></li>
+<li><p>&ldquo;Feels great to not be the only woman on team, very empowering&rdquo;. This quote
+really struck me. Of course it&rsquo;s better to have one woman on your team than
+none, but in order for the woman to not feel like the token woman on the team
+it&rsquo;s better to have two or more.</p></li>
+<li><p>Need women on DevOps Days Organizaing team. The DevOps Days organizers really
+would like women to participate in planning future DevOps Days events. Email
+<a href="mailto://info@devopsdays.org">info@devopsdays.org</a> for more information.</p></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby Fundamentals: Using Custom Setters to clean up Instance Variables]]></title>
@@ -2222,128 +2264,6 @@ the comments. Cheers.</p>
 
 
 <p>So, now you can use helper methods in your own cookbooks for fun and profit. Let me know in the comments if you are using this pattern other patterns for including cookbook helpers.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Creating a git pre-commit hook for Chef cookbooks]]></title>
-    <link href="http://dougireton.github.io/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks/"/>
-    <updated>2012-12-10T21:02:00-08:00</updated>
-    <id>http://dougireton.github.io/blog/2012/12/10/creating-a-git-pre-commit-hook-for-chef-cookbooks</id>
-    <content type="html"><![CDATA[<p>We&rsquo;ve been using Chef in our group now for a few months, but until now we haven&rsquo;t been serious about linting or testing our Chef cookbooks. I decided to get serious today and write a Git pre-commit <a href="http://git-scm.com/docs/githooks">hook</a> for linting cookboks.</p>
-
-<p>Git runs the pre-commit hook script before each commit. This allows you to run code quality checks so only clean code is committed to your repo.</p>
-
-<p>It&rsquo;s important to note that git hooks aren&rsquo;t copied down when you clone a git repo. Each developer will need to create his or her own pre-commit hook script in the .git/hooks/ directory of the repo. If you wanted to get fancy, you could keep git hook scripts in a &ldquo;utility&rdquo; repo and have a rake script to copy them to the right location.</p>
-
-<p>The pre-commit script below does four things:</p>
-
-<ol>
-<li>Runs a built-in Git whitespace check for trailing whitespace, mixed tabs and spaces, etc.</li>
-<li>Runs <a href="http://wiki.opscode.com/display/chef/Managing+Cookbooks+With+Knife#ManagingCookbooksWithKnife-test">&lsquo;knife cookbook test&rsquo;</a> to check Ruby and ERB template syntax.</li>
-<li>Runs <a href="https://github.com/turboladen/tailor">&lsquo;tailor&rsquo;</a> to check your code against Ruby style conventions.</li>
-<li>Runs <a href="http://acrmp.github.com/foodcritic/">&lsquo;foodcritic&rsquo;</a>, the de facto Chef cookbook linting tool.</li>
-</ol>
-
-
-<!--more-->
-
-
-
-
-<figure class='code'><figcaption><span> (pre-commit)</span> <a href='http://dougireton.github.io/downloads/code/chef/pre-commit'>download</a></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># check for whitespace errors</span>
-</span><span class='line'><span class="n">git_ws_check</span> <span class="o">=</span> <span class="sb">`git diff-index --check --cached HEAD --`</span>
-</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="n">git_ws_check</span>
-</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">COOKBOOK_PATH</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">split</span> <span class="sb">`git rev-parse --show-toplevel`</span>
-</span><span class='line'><span class="no">PARENT_PATH</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="no">COOKBOOK_NAME</span> <span class="o">=</span> <span class="no">COOKBOOK_PATH</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">chomp</span> <span class="c1"># remove trailing newline</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running knife cookbook test...&#39;</span>
-</span><span class='line'><span class="n">knife_output</span> <span class="o">=</span> <span class="sb">`knife cookbook test </span><span class="si">#{</span> <span class="no">COOKBOOK_NAME</span> <span class="si">}</span><span class="sb"> -o </span><span class="si">#{</span> <span class="no">PARENT_PATH</span> <span class="si">}</span><span class="sb"> -c ~/chef/wit/chef-repo/.chef/knife.rb`</span>
-</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="n">knife_output</span>
-</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="s1">&#39;Running tailor...&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Get the file names of (A)dded, (C)opied, (M)odified Ruby files </span>
-</span><span class='line'><span class="no">STAGED_FILES</span> <span class="o">=</span> <span class="sb">`git diff-index --name-only --diff-filter=ACM HEAD -- &#39;*.rb&#39;`</span>
-</span><span class='line'><span class="no">STAGED_FILES</span><span class="o">.</span><span class="n">lines</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">file</span><span class="o">.</span><span class="n">chomp!</span> <span class="c1"># remove carriage returns</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="n">file</span>
-</span><span class='line'>    <span class="n">tailor_output</span> <span class="o">=</span> <span class="sb">`tailor --max-line-length 999 </span><span class="si">#{</span> <span class="n">file</span> <span class="si">}</span><span class="sb">`</span>
-</span><span class='line'>    <span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="n">tailor_output</span>
-</span><span class='line'>      <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Running foodcritic...&quot;</span>
-</span><span class='line'><span class="n">fc_output</span> <span class="o">=</span> <span class="sb">`foodcritic --epic-fail any </span><span class="si">#{</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">PARENT_PATH</span><span class="p">,</span> <span class="no">COOKBOOK_NAME</span><span class="p">)</span> <span class="si">}</span><span class="sb">`</span>
-</span><span class='line'><span class="k">unless</span> <span class="vg">$?</span><span class="o">.</span><span class="n">success?</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="n">fc_output</span>
-</span><span class='line'>  <span class="nb">exit</span> <span class="mi">1</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>But, how do I use it?</h2>
-
-<p>Just copy the script below to file named &lsquo;pre-commit&rsquo;, make it executable, and copy it to the cookbooks/cookbook_name/.git/hooks/ directory.</p>
-
-<h2>Wait a minute! It&rsquo;s not robust!</h2>
-
-<p>You may have noticed that the script needs a few things. It should check for the existence of various binaries (knife, foodcritic, tailor) before calling them. I&rsquo;m sure you could think of many more improvents. I welcome your comments or gist forks. I just had to move on to more pressing things.</p>
-
-<p>Thanks for reading and I welcome constructive comments&hellip;</p>
 ]]></content>
   </entry>
   
